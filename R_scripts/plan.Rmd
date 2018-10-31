@@ -1,0 +1,46 @@
+---
+title: "plan"
+output: html_document
+---
+# Introduction
+
+## Analyse exploratoire
+explications générales, provenance du jeu...  
+Description des variables et de notre variable cible  
+Visualisation des relations avec la variable cible.  
+Explication du data cleaning (limitation des valeurs manquantes à 20% par colonne), suppression des lignes n'ayant pas de valeurs dans la colonne cible.  
+
+## Analyse des valeurs manquantes
+Descrition quantitatives des valeurs manquantes (quels sont les colonnes et les lignes les plus concernées).  
+Est-ce que les valeurs manquantes sont distribuées au hasard ou bien est-ce qu'il est possible que certains pays soient plus concernés ?  
+Pays pauvres = moins de ressources pour la collecte statistiques ?  
+
+# Imputation des valeurs manquantes
+
+## Imputation grâce au PCA
+Utilisation du package MissMDA pour réaliser une première imputation naïve des valeurs manquantes.  
+Visualisation des résultats  
+
+## Imputation multiples et évaluation de l'incertitude sur les valeurs imputées
+Utilisation du package MissMDA pour évaluer la stabilité des axes.  
+Visualisation de l'incertitude quant aux valeurs imputées.  
+Est-ce que l'imputation ne crée pas de déséquilibre dans les relations entre variables ?  
+
+# PCA
+réalisation d'un PCA sur jeu complet avec les package factomineR et factoextra.  
+Est-ce que le jeu se prête bien à une réduction de la dimension ?  
+Visualisation en 2D.  
+Peut-on utiliser un jeu réduit pour prédire notre variable cible ou est-ce que la perte d'information est trop importante ?    
+
+# Analyse prédictive
+paramétrage du leave one out (petit jeu)  
+
+## Modèle linéaire
+Analyse prédictive via un modèle linéaire classique.  
+stepwise regression ?  
+Diagnostics  
+
+## Modèle non linéaire
+Analyse prédictive via une méthode alternative comme forêts aléatoires par exemple  
+
+# Conclusion

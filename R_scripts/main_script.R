@@ -9,7 +9,7 @@ library("VIM")
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
 # http://factominer.free.fr/course/missing.html
 
-raw_data2 <- readxl::read_xlsx("../data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
+raw_data2 <- readxl::read_xlsx("data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
 raw_data2 %>%
   summarise_all(funs(sum(is.na(.)))) / nrow(raw_data2) * 100 -> missing_values_pct
 
@@ -52,8 +52,8 @@ data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
 
-pdf("plots.pdf")
+
 plot(res.comp)
-dev.off()
+
 
 data_imputed <- res.comp$res.imputePCA
