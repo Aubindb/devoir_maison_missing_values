@@ -77,40 +77,44 @@ data_imputed <- res.comp$res.imputePCA
 # avec mice
 data_clean_numeric_mice = data_clean %>% select(which(sapply(.,is.numeric)))
 #names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
-saced_names <- names(data_clean_numeric_mice)
+saved_names <- names(data_clean_numeric_mice)
 names(data_clean_numeric_mice) <- LETTERS #str_c(1:26)
 
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
 imputed = mice(data_clean_numeric_mice, method="rf", predictorMatrix=predM, m=5)
-# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 pdf("output/mice/random_forest/plots.pdf")
 densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
 
 imputed = mice(data_clean_numeric_mice, method="cart", predictorMatrix=predM, m=5)
-# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 pdf("output/mice/cart/plots.pdf")
 densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
 
 imputed = mice(data_clean_numeric_mice, method="mean", predictorMatrix=predM, m=1)
-# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 pdf("output/mice/mean/plots.pdf")
 densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, method="norm.nob", predictorMatrix=predM, m=1)
-# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+imputed = mice(data_clean_numeric_mice, method="norm.nob", m=1)
 
-pdf("output/mice/mean/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
-dev.off()
+# résolution du pb non inversion de la matrice
+data_clean_numeric_mice$K <- data_clean_numeric_mice$K/1000000
+start <- mice(data_clean_numeric_mice, maxit=0, print=F)
+pred <- start$pred
+
+meth <- rep("rf", 26)
+names(meth) <- LETTERS
+meth["X"] <- "norm.nob"
+dta<-data_clean_numeric_mice%>%select(-F, -E)
+#pred2 <- quickpred(data_clean_numeric_mice, mincor=.3)
+imputed <- mice(dta, method="norm", m=2)
+
 
 summary(imputed)
 complete(imputed,2)
