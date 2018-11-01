@@ -25,4 +25,20 @@ Très souvent, les jeux de données contiennent également des valeurs manquante
 * individu faisant parti d'une cohorte n'étant plus en mesure de répondre...  
 
 A chaque fois, l'analyste devra déterminer quels sont les raisons de la présence de ces valeurs manquantes avant de trouver une solution pour y remédier.  
-Il n'existe malheureusement de manière unique de traiter les valeurs manquantes. Plusieurs techniques pourront être essayés afin de trouver la meilleure solution dans un cas donné. Le but de l'imputation est donc de compléter un jeu de données sans changer la structure des données réelles. En effet, une mauvaise imputation ou l'abandon de certaines observations peut conduire à des analyses biasées. 
+Il n'existe malheureusement de manière unique de traiter les valeurs manquantes. Plusieurs techniques pourront être essayés afin de trouver la meilleure solution dans un cas donné. Le but de l'imputation est donc de compléter un jeu de données sans changer la structure des données réelles. En effet, une mauvaise imputation ou l'abandon de certaines observations peut conduire à des analyses biasées.
+
+### Présentation du jeu et analyse exploratoire
+
+Nous avons choisi d'analyser un jeu qui provient de la banque mondiale. L'institution financière internationale, dont le rôle est d'accorder des prêts afin d'encourager le développement, dispose d'un site permettant de requêter des données sur l'ensemble des pays. Nous avons choisi d'analyser les indicateurs les plus populaires (*Popular Indicators*). Le détail des variables ainsi que leurs sources sont disponibles dans le fichier `des.xlsx` à la racine du projet.  
+
+Nous chargeons les *packages* nécessaires à l'analyse :
+```{r init, include=TRUE, warning=FALSE, results='hide'}
+library("tidyverse")
+
+library("FactoMineR")
+library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
+
+library("missMDA")
+library("VIM")
+```
+Nous chargeons les données :
