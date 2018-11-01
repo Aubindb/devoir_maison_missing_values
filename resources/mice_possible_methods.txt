@@ -1,0 +1,14 @@
+pmm	any	Predictive mean matching
+midastouch	any	Weighted predictive mean matching
+sample	any	Random sample from observed values
+cart	any	Classification and regression trees
+rf	any	Random forest imputations
+mean	numeric	Unconditional mean imputation
+norm	numeric	Bayesian linear regression
+norm.nob	numeric	Linear regression ignoring model error
+norm.boot	numeric	Linear regression using bootstrap
+norm.predict	numeric	Linear regression, predicted values
+quadratic	numeric	Imputation of quadratic terms
+ri	numeric	Random indicator for nonignorable data
+
+https://www.rdocumentation.org/packages/mice/versions/3.3.0/topics/mice

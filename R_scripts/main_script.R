@@ -4,6 +4,8 @@ library("FactoMineR")
 library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
 
 library("missMDA")
+library("mice")
+
 library("VIM")
 
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
@@ -66,7 +68,51 @@ data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
 
+pdf("output/missMDA/MIPCA-100.pdf")
 plot(res.comp)
-
+dev.off()
 # Le tableau avec les valeurs imputées est disponible comme ceci :
 data_imputed <- res.comp$res.imputePCA
+
+# avec mice
+data_clean_numeric_mice = data_clean %>% select(which(sapply(.,is.numeric)))
+#names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
+saced_names <- names(data_clean_numeric_mice)
+names(data_clean_numeric_mice) <- LETTERS #str_c(1:26)
+
+# pmm : predictive mean matching : pb > la matrice n'est pas inversible
+# voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+
+imputed = mice(data_clean_numeric_mice, method="rf", predictorMatrix=predM, m=5)
+# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+pdf("output/mice/random_forest/plots.pdf")
+densityplot(imputed)
+stripplot(imputed, pch = 20, cex = 1.2)
+dev.off()
+
+imputed = mice(data_clean_numeric_mice, method="cart", predictorMatrix=predM, m=5)
+# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+pdf("output/mice/cart/plots.pdf")
+densityplot(imputed)
+stripplot(imputed, pch = 20, cex = 1.2)
+dev.off()
+
+imputed = mice(data_clean_numeric_mice, method="mean", predictorMatrix=predM, m=1)
+# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+pdf("output/mice/mean/plots.pdf")
+densityplot(imputed)
+stripplot(imputed, pch = 20, cex = 1.2)
+dev.off()
+
+imputed = mice(data_clean_numeric_mice, method="norm.nob", predictorMatrix=predM, m=1)
+# https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
+
+pdf("output/mice/mean/plots.pdf")
+densityplot(imputed)
+stripplot(imputed, pch = 20, cex = 1.2)
+dev.off()
+
+summary(imputed)
+complete(imputed,2)
+
+
