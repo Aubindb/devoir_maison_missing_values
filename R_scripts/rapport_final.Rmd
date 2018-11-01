@@ -1,28 +1,28 @@
 ---
-title: "rapport_final"
-output: html_document
+title: "Devoir ACP et valeurs manquantes, Novembre 2018"
+author: "Aubin de Belleroche, Camille Moatti"
+date: "01 Novembre 2018"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Les données issues du monde réel sont souvent moins faciles à manipuler que celles formatées pour les salles de classe.  
+L'analyste doit fréquemment remanier les données afin d'obtenir un enregistrement par ligne et une variable par colonne (*tidy data*) et reformater les données (paramètres régionaux, formats des dates, codage des catégories...). 
+Très souvent, les jeux de données contiennent également des valeurs manquantes. Cela peut-être dû à une multitude de facteurs :
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+* défaillance matérielle (capteur en panne par exemple)
+* nouvelle variable apparue à une certaine date (valeurs manquantes pour les dates antérieures)
+* sondage  auxquel les sondés n'ont répondu que partiellement
+* individu faisant parti d'une cohorte n'étant plus en mesure de répondre...  
 
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+A chaque fois, l'analyste devra déterminer quels sont les raisons de la présence de ces valeurs manquantes avant de trouver une solution pour y remédier.  
+Il n'existe malheureusement de manière unique de traiter les valeurs manquantes. Plusieurs techniques pourront être essayés afin de trouver la meilleure solution dans un cas donné. Le but de l'imputation est donc de compléter un jeu de données sans changer la structure des données réelles. En effet, une mauvaise imputation ou l'abandon de certaines observations peut conduire à des analyses biasées. 
