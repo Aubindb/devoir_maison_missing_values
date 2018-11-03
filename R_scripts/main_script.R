@@ -5,6 +5,7 @@ library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
 
 library("missMDA")
 library("mice")
+library("FactoInvestigate")
 
 library("VIM")
 
@@ -65,6 +66,8 @@ ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per w
 # avec missMDA, on réalise une imputation multiple pour
 # mesurer l'incertitude sur les valeurs imputées :
 data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.data.frame(.)
+# ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
+data_clean_numeric <- scale(data_clean_numeric)
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
 
@@ -73,6 +76,9 @@ plot(res.comp)
 dev.off()
 # Le tableau avec les valeurs imputées est disponible comme ceci :
 data_imputed <- res.comp$res.imputePCA
+res<-PCA(res.comp$res.imputePCA)
+plot(res)
+Investigate(res)
 
 # avec mice
 data_clean_numeric_mice = data_clean %>% select(which(sapply(.,is.numeric)))
