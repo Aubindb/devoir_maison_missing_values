@@ -87,6 +87,9 @@ data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
 saved_names <- names(data_clean_numeric_mice)
 names(data_clean_numeric_mice) <- LETTERS #str_c(1:26)
 
+letters_dict <- saved_names
+names(letters_dict) <- LETTERS
+
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
