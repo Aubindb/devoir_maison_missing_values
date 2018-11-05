@@ -117,6 +117,12 @@ densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
 
+imputed = mice(data_clean_numeric_mice, m=10)
+pdf("output/mice/pmm/plots.pdf")
+densityplot(imputed)
+stripplot(imputed, pch = 20, cex = 1.2)
+dev.off()
+
 summary(imputed)
 complete(imputed,2)
 
