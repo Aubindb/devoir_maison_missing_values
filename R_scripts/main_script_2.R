@@ -5,11 +5,8 @@ library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
 
 library("missMDA")
 library("mice")
-library("FactoInvestigate")
 
 library("VIM")
-
-library(naniar)
 
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
 # http://factominer.free.fr/course/missing.html
@@ -68,29 +65,20 @@ ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per w
 # avec missMDA, on réalise une imputation multiple pour
 # mesurer l'incertitude sur les valeurs imputées :
 data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.data.frame(.)
-# ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
-data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
 
-#pdf("output/missMDA/MIPCA-100.pdf")
-plot(res.comp, cex.lab=.5)
-#dev.off()
+pdf("output/missMDA/MIPCA-100.pdf")
+plot(res.comp)
+dev.off()
 # Le tableau avec les valeurs imputées est disponible comme ceci :
 data_imputed <- res.comp$res.imputePCA
-res<-PCA(res.comp$res.imputePCA)
-plot(res)
-Investigate(res)
 
 # avec mice
-data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
-data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
+data_clean_numeric_mice = data_clean %>% select(which(sapply(.,is.numeric)))
 #names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
 saved_names <- names(data_clean_numeric_mice)
 names(data_clean_numeric_mice) <- LETTERS #str_c(1:26)
-
-letters_dict <- saved_names
-names(letters_dict) <- LETTERS
 
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
@@ -113,17 +101,20 @@ densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, method="norm.nob", m=10)
-pdf("output/mice/norm_nob/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
-dev.off()
+imputed = mice(data_clean_numeric_mice, method="norm.nob", m=1)
 
-imputed = mice(data_clean_numeric_mice, m=10)
-pdf("output/mice/pmm/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
-dev.off()
+# résolution du pb non inversion de la matrice
+data_clean_numeric_mice$K <- data_clean_numeric_mice$K/1000000
+start <- mice(data_clean_numeric_mice, maxit=0, print=F)
+pred <- start$pred
+
+meth <- rep("rf", 26)
+names(meth) <- LETTERS
+meth["X"] <- "norm.nob"
+dta<-data_clean_numeric_mice%>%select(-F, -E)
+#pred2 <- quickpred(data_clean_numeric_mice, mincor=.3)
+imputed <- mice(dta, method="norm", m=2)
+
 
 summary(imputed)
 complete(imputed,2)
