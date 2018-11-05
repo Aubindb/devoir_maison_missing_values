@@ -65,13 +65,20 @@ ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per w
        x="Total fertility",
        y="Mobile subscriptions per 100 people")
 
+
+
 # avec missMDA, on réalise une imputation multiple pour
 # mesurer l'incertitude sur les valeurs imputées :
 data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.data.frame(.)
+saved_names <- names(data_clean_numeric)
+names(data_clean_numeric) <- LETTERS #str_c(1:26)
 # ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
 data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
+imp<-prelim(res.comp, data_clean_numeric)
+densityplot(imp)
+stripplot(imp, pch = 20, cex = 1.2)
 
 #pdf("output/missMDA/MIPCA-100.pdf")
 plot(res.comp, cex.lab=.5)
@@ -86,11 +93,12 @@ Investigate(res)
 data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
 data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
 #names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
-saved_names <- names(data_clean_numeric_mice)
-names(data_clean_numeric_mice) <- LETTERS #str_c(1:26)
+
 
 letters_dict <- saved_names
 names(letters_dict) <- LETTERS
+
+data_clean_numeric_mice <- data_clean_numeric_mice %>% select(-K)
 
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
@@ -124,6 +132,8 @@ pdf("output/mice/pmm/plots.pdf")
 densityplot(imputed)
 stripplot(imputed, pch = 20, cex = 1.2)
 dev.off()
+
+xyplot()
 
 summary(imputed)
 complete(imputed,2)
