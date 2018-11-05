@@ -9,6 +9,8 @@ library("FactoInvestigate")
 
 library("VIM")
 
+library(naniar)
+
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
 # http://factominer.free.fr/course/missing.html
 
