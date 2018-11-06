@@ -9,6 +9,7 @@ library("FactoInvestigate")
 
 library("VIM")
 
+library(UpSetR)
 library(naniar)
 
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
@@ -41,6 +42,8 @@ data_clean <- data_limited_missing %>% drop_na(`Fertility rate, total (births pe
 VIM::aggr(data_clean, plot=F)
 
 VIM::aggr(data_clean)
+
+gg_miss_upset(data_clean_numeric, nsets = n_var_miss(data_clean_numeric))
 
 ggplot(data = data_clean) +
   geom_histogram(mapping = aes(x = `Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`))
