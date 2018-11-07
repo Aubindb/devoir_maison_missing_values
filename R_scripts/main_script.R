@@ -1,4 +1,5 @@
 library("tidyverse")
+library("magrittr")
 
 library("FactoMineR")
 library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
@@ -40,30 +41,46 @@ data_limited_missing <- raw_data2 %>% select(inf_20_pct$key)
 # On drop les lignes ayant une valeur manquante dans la colonne Fertility rate :
 data_clean <- data_limited_missing %>% drop_na(`Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`)
 
+# On va dropper les colonnes de mesures de richesses à l'échelle
+# d'un pays qui peuvent être corrélés aux mesures par tête :
+data_clean %<>% select(-c(`GNI, PPP (current international $) [NY.GNP.MKTP.PP.CD]`,
+                          `GNI, Atlas method (current US$) [NY.GNP.ATLS.CD]`,
+                          `GDP (current US$) [NY.GDP.MKTP.CD]`))
+
+# On renomme les colonnes avec des lettres :
+saved_names <- names(data_clean)
+LETTERS702 <- c(LETTERS, sapply(LETTERS, function(x) paste0(x, LETTERS)))
+names(data_clean) <- LETTERS702[1:dim(data_clean)[2]]
+
+# On créé un dictionnaire pour conserver la correspondance entre
+# les lettres et le nom des variables d'origine
+letters_dict <- saved_names
+names(letters_dict) <- LETTERS702[1:dim(data_clean)[2]]
+
 # Divers plots :
 VIM::aggr(data_clean, plot=F)
 
 VIM::aggr(data_clean)
 
-gg_miss_upset(data_clean_numeric, nsets = n_var_miss(data_clean_numeric))
+gg_miss_upset(data_clean, nsets = n_var_miss(data_clean))
 
 ggplot(data = data_clean) +
-  geom_histogram(mapping = aes(x = `Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`))
+  geom_histogram(mapping = aes(x = Q))
 
-ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`,
-                                        y = `Adolescent fertility rate (births per 1,000 women ages 15-19) [SP.ADO.TFRT]`)) + 
+ggplot(data = data_clean, mapping = aes(x = Q,
+                                        y = N)) + 
   geom_smooth(se = TRUE) +
   geom_point()+
   labs(title="Total fertility vs. Ado fertility", x="Total fertility", y="Ado fertility")
 
-ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`,
-                                        y = `GNI per capita, PPP (current international $) [NY.GNP.PCAP.PP.CD]`)) + 
+ggplot(data = data_clean, mapping = aes(x = Q,
+                                        y = `F`)) + 
   geom_smooth(se = TRUE) +
   geom_point()+
   labs(title="Total fertility vs. Wealth", x="Total fertility", y="GNI per capita ($)")
 
-ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`,
-                                        y = `Mobile cellular subscriptions (per 100 people) [IT.CEL.SETS.P2]`)) + 
+ggplot(data = data_clean, mapping = aes(x = Q,
+                                        y = U)) + 
   geom_smooth(se = TRUE) +
   geom_point()+
   labs(title="Total fertility vs. Mobile subscriptions per 100 people",
@@ -75,12 +92,11 @@ ggplot(data = data_clean, mapping = aes(x = `Fertility rate, total (births per w
 # avec missMDA, on réalise une imputation multiple pour
 # mesurer l'incertitude sur les valeurs imputées :
 data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.data.frame(.)
-saved_names <- names(data_clean_numeric)
-names(data_clean_numeric) <- LETTERS #str_c(1:26)
+
 # ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
 data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
-res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 100)
+res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 10)
 imp<-prelim(res.comp, data_clean_numeric)
 densityplot(imp)
 stripplot(imp, pch = 20, cex = 1.2)
@@ -98,10 +114,6 @@ Investigate(res)
 data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
 data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
 #names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
-
-
-letters_dict <- saved_names
-names(letters_dict) <- LETTERS
 
 data_clean_numeric_mice <- data_clean_numeric_mice %>% select(-K)
 
