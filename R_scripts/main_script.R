@@ -10,7 +10,7 @@ library("FactoInvestigate")
 library("VIM")
 
 library(UpSetR)
-library(naniar)
+library(naniar) #https://cran.r-project.org/web/packages/naniar/vignettes/naniar-visualisation.html
 
 # https://www.youtube.com/watch?v=OOM8_FH6_8o&feature=youtu.be
 # http://factominer.free.fr/course/missing.html
@@ -21,6 +21,8 @@ raw_data2 <- readxl::read_xlsx("data/Popular Indicators.xlsx", na="..") %>% filt
 # On calcul la proportion de missing dans chaque colonne :
 raw_data2 %>%
   summarise_all(funs(sum(is.na(.)))) / nrow(raw_data2) * 100 -> missing_values_pct
+#Graphiquement 
+gg_miss_var(raw_data2, show_pct = TRUE)
 
 # On peut trier de la colonne avec le plus de valeurs manquantes à celle qui
 # en a le moins :
