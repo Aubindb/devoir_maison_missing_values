@@ -120,34 +120,39 @@ data_clean_numeric_mice <- data_clean_numeric_mice %>% select(-K)
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
-imputed = mice(data_clean_numeric_mice, method="rf", predictorMatrix=predM, m=5)
+#random forest
+imputed_rf = mice(data_clean_numeric_mice, method="rf", m=5)
 pdf("output/mice/random_forest/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
+densityplot(imputed_rf)
+stripplot(imputed_rf, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, method="cart", predictorMatrix=predM, m=5)
+#Classification and regression trees
+imputed_cart = mice(data_clean_numeric_mice, method="cart", m=5)
 pdf("output/mice/cart/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
+densityplot(imputed_cart)
+stripplot(imputed_cart, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, method="mean", predictorMatrix=predM, m=1)
+#Unconditional mean imputation
+imputed_mean = mice(data_clean_numeric_mice, method="mean", m=1)
 pdf("output/mice/mean/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
+densityplot(imputed_mean)
+stripplot(imputed_mean, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, method="norm.nob", m=10)
+#Linear regression ignoring model error
+imputed_normnob = mice(data_clean_numeric_mice, method="norm.nob", m=10)
 pdf("output/mice/norm_nob/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
+densityplot(imputed_normnob)
+stripplot(imputed_normnob, pch = 20, cex = 1.2)
 dev.off()
 
-imputed = mice(data_clean_numeric_mice, m=10)
+#Predictive mean matching
+imputed_pmm = mice(data_clean_numeric_mice, m=10)
 pdf("output/mice/pmm/plots.pdf")
-densityplot(imputed)
-stripplot(imputed, pch = 20, cex = 1.2)
+densityplot(imputed_pmm)
+stripplot(imputed_pmm, pch = 20, cex = 1.2)
 dev.off()
 
 xyplot()
