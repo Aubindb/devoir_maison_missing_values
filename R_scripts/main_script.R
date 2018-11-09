@@ -98,8 +98,10 @@ data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 10)
 imp<-prelim(res.comp, data_clean_numeric)
+pdf("output/missMDA/plots.pdf")
 densityplot(imp)
 stripplot(imp, pch = 20, cex = 1.2)
+dev.off()
 
 #pdf("output/missMDA/MIPCA-100.pdf")
 plot(res.comp, cex.lab=.5)
