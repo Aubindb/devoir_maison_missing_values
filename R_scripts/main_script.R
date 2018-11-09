@@ -156,7 +156,8 @@ stripplot(imputed_pmm, pch = 20, cex = 1.2)
 dev.off()
 
 # Début du modeling : Q ~ . ne semble pas fonctionner
-fit <- with(data = imputed_pmm, exp = lm(Q ~ A))
+fit <- with(data = imputed_pmm, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
+                                           K+L+M+O+P+R+S+T+U+V+AA))
 summary(pool(fit))
-
+summary(fit$analyses[[2]])
 
