@@ -115,8 +115,6 @@ data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
 data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
 #names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
 
-data_clean_numeric_mice <- data_clean_numeric_mice %>% select(-K)
-
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
