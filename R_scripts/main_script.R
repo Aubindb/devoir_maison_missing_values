@@ -155,9 +155,8 @@ densityplot(imputed_pmm)
 stripplot(imputed_pmm, pch = 20, cex = 1.2)
 dev.off()
 
-xyplot()
-
-summary(imputed)
-complete(imputed,2)
+# Début du modeling : Q ~ . ne semble pas fonctionner
+fit <- with(data = imputed_pmm, exp = lm(Q ~ A))
+summary(pool(fit))
 
 
