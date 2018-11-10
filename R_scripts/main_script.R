@@ -95,6 +95,14 @@ data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.
 
 # ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
 data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
+# On sort la variable cible :
+target <- data_clean_numeric$Q
+data_clean_numeric %<>% select(-Q)
+# Premier mode opératoire :
+# on réalise une imputation multiple pour évaluer la pertinence de la methode
+# puis on utilise imputePCA pour avoir un PCA sur tableau complet
+# on pourra alors essayer de fitter un modèle linéaire sur l'output.
+
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 10)
 imp<-prelim(res.comp, data_clean_numeric)
@@ -107,10 +115,18 @@ dev.off()
 plot(res.comp, cex.lab=.5)
 #dev.off()
 # Le tableau avec les valeurs imputées est disponible comme ceci :
-data_imputed <- res.comp$res.imputePCA
-res<-PCA(res.comp$res.imputePCA)
+data_imputed <- imputePCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE)
+# TODO : imputePCA renvoie completeObs et fittedX différences ??
+# ok utiliser completeObs pour le PCA :
+# https://www.youtube.com/watch?v=YDbx2pk9xNY&list=PLnZgp6epRBbQzxFnQrcxg09kRt-PA66T_&index=2
+res<-PCA(data_imputed[["completeObs"]])
 plot(res)
 Investigate(res)
+# modélisation avec 5 dimensions
+ind_coord <- res[["ind"]][["coord"]] %>% as_tibble()
+ind_coord_target <- ind_coord %>% mutate(target = target)
+fit <- lm(target~.-1, ind_coord_target)
+summary(fit)
 
 # avec mice
 data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
