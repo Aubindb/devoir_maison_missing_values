@@ -6,6 +6,7 @@ library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
 
 library("missMDA")
 library("mice")
+library("randomForest")
 library("FactoInvestigate")
 
 library("VIM")
@@ -127,53 +128,64 @@ ind_coord <- res[["ind"]][["coord"]] %>% as_tibble()
 ind_coord_target <- ind_coord %>% mutate(target = target)
 fit <- lm(target~.-1, ind_coord_target)
 summary(fit)
+plot(fit)
 
-# avec mice
+# Second mode opératoire avec mice. On va utiliser plusieurs méthodes
+# offertes par le package afin de compléter les valeurs manquantes
+# et de construire un modèle :
 data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
 data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
-#names(data_clean_numeric_mice) <- gsub(" ", ".", names(data_clean_numeric_mice))
+# On sort la variable cible. Etant donné le fonctionnement particulier
+# de pool, il est difficile d'ajouter une colonne "target" avant le modeling
+# comme nous l'avons fait avec missMDA. Cependant, l'utilisation
+# du paramètre predictorMatrix nous permet d'exclure une variable
+# lors de l'imputation :
+imp <- mice(data_clean_numeric_mice, print = FALSE)
+pred <- imp$predictorMatrix
+pred[, "Q"] <- 0
 
 # pmm : predictive mean matching : pb > la matrice n'est pas inversible
 # voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
 #random forest
-imputed_rf = mice(data_clean_numeric_mice, method="rf", m=5)
+imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=5)
 pdf("output/mice/random_forest/plots.pdf")
 densityplot(imputed_rf)
 stripplot(imputed_rf, pch = 20, cex = 1.2)
 dev.off()
 
 #Classification and regression trees
-imputed_cart = mice(data_clean_numeric_mice, method="cart", m=5)
+imputed_cart = mice(data_clean_numeric_mice, pred = pred, method="cart", m=5)
 pdf("output/mice/cart/plots.pdf")
 densityplot(imputed_cart)
 stripplot(imputed_cart, pch = 20, cex = 1.2)
 dev.off()
 
 #Unconditional mean imputation
-imputed_mean = mice(data_clean_numeric_mice, method="mean", m=1)
+imputed_mean = mice(data_clean_numeric_mice, pred = pred, method="mean", m=1)
 pdf("output/mice/mean/plots.pdf")
 densityplot(imputed_mean)
 stripplot(imputed_mean, pch = 20, cex = 1.2)
 dev.off()
 
 #Linear regression ignoring model error
-imputed_normnob = mice(data_clean_numeric_mice, method="norm.nob", m=10)
+imputed_normnob = mice(data_clean_numeric_mice, pred = pred, method="norm.nob", m=10)
 pdf("output/mice/norm_nob/plots.pdf")
 densityplot(imputed_normnob)
 stripplot(imputed_normnob, pch = 20, cex = 1.2)
 dev.off()
 
 #Predictive mean matching
-imputed_pmm = mice(data_clean_numeric_mice, m=10)
+imputed_pmm = mice(data_clean_numeric_mice, pred = pred, method="pmm", m=10)
 pdf("output/mice/pmm/plots.pdf")
 densityplot(imputed_pmm)
 stripplot(imputed_pmm, pch = 20, cex = 1.2)
 dev.off()
 
-# Début du modeling : Q ~ . ne semble pas fonctionner
+# Début du modeling : Q~. ne fonctionne pas !
 fit <- with(data = imputed_pmm, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
                                            K+L+M+O+P+R+S+T+U+V+AA))
+mod_step <- step(fit$analyses[[2]], direction = "both")
+summary(mod_step)
 summary(pool(fit))
-summary(fit$analyses[[2]])
 
