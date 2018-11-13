@@ -101,7 +101,7 @@ target <- data_clean_numeric$Q
 data_clean_numeric %<>% select(-Q)
 # Premier mode opératoire :
 # on réalise une imputation multiple pour évaluer la pertinence de la methode
-# puis on utilise imputePCA pour avoir un PCA sur tableau complet
+# puis on utilise imputePCA pour avoir un PCA sur tableau complet 
 # on pourra alors essayer de fitter un modèle linéaire sur l'output.
 
 nbdim <- estim_ncpPCA(data_clean_numeric) # dans un premier temps tout le df après on exclut la variable cible ?
@@ -116,11 +116,9 @@ dev.off()
 plot(res.comp, cex.lab=.5)
 #dev.off()
 # Le tableau avec les valeurs imputées est disponible comme ceci :
-data_imputed <- imputePCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE)
-# TODO : imputePCA renvoie completeObs et fittedX différences ??
-# ok utiliser completeObs pour le PCA :
-# https://www.youtube.com/watch?v=YDbx2pk9xNY&list=PLnZgp6epRBbQzxFnQrcxg09kRt-PA66T_&index=2
-res<-PCA(data_imputed[["completeObs"]])
+data_imputed <- res.comp[["res.imputePCA"]]
+
+res<-PCA(data_imputed)
 plot(res)
 Investigate(res)
 # modélisation avec 5 dimensions
