@@ -189,3 +189,7 @@ mod_step <- step(fit$analyses[[2]], direction = "both")
 summary(mod_step)
 summary(pool(fit))
 
+fit <- with(data = imputed_rf, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
+                                           K+L+M+O+P+R+S+T+U+V+AA))
+summary(pool(fit))
+
