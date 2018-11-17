@@ -183,11 +183,48 @@ dev.off()
 # Début du modeling : Q~. ne fonctionne pas !
 fit <- with(data = imputed_pmm, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
                                            K+L+M+O+P+R+S+T+U+V+AA))
-mod_step <- step(fit$analyses[[2]], direction = "both")
+
+mod_step <- step(fit$analyses[[3]], direction = "both")
 summary(mod_step)
 summary(pool(fit))
+summary(fit$analyses[[3]])
 
 fit <- with(data = imputed_rf, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
                                            K+L+M+O+P+R+S+T+U+V+AA))
 summary(pool(fit))
 
+# Selection de variable avec la méthode conseillée par van burren
+# le sujet semble assez délicat.
+
+step_on_mice <- function (mice_object, direction = "both") {
+  fit <- with(data = mice_object, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
+                                             K+L+M+O+P+R+S+T+U+V+AA))
+  len <- length(fit$analyses)
+  all_kept_var <- vector()
+  for (i in 1:len) {
+    mod_step <- step(fit$analyses[[i]], direction = direction)
+    kept_var <- names(mod_step[["coefficients"]])
+    all_kept_var <- c(all_kept_var, kept_var)
+  }
+  table(all_kept_var)
+}
+var_count <- step_on_mice(imputed_pmm)
+plot(var_count)
+fin_var_name <- names(var_count[var_count > 5])
+fin_var_name <- fin_var_name[fin_var_name!= "(Intercept)"]
+
+make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, intercept=TRUE){
+  final_var <- step_on_mice_res[step_on_mice_res > threshold]
+  fin_var_name <- names(final_var)
+  fin_var_name <- fin_var_name[fin_var_name!= "(Intercept)"]
+  if (intercept){
+  formula_ <- as.formula(paste("Q", paste(fin_var_name, collapse=" + "), sep=" ~ "))
+  } else {
+    formula_ <- as.formula(paste("Q", paste(paste(fin_var_name, collapse=" + "), "-1"), sep=" ~ "))
+  }
+  print(formula_)
+  with(data = mice_object, exp=lm(formula(format(formula_))))
+}
+var_count <- step_on_mice(imputed_pmm)
+fit_selected_var <- make_linear_model(imputed_pmm, var_count)
+summary(pool(fit_selected_var))
