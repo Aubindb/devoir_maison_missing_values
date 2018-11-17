@@ -225,3 +225,37 @@ var_count <- step_on_mice(imputed_pmm)
 plot(var_count)
 fit_selected_var <- make_linear_model(imputed_pmm, var_count)
 summary(pool(fit_selected_var))
+# plot
+
+plot_imputed <- function(mice_object, original_dataset, column, plot_type="model", se=F, method="auto"){
+  x_imputations <- mice_object[["imp"]][[column]]
+  index <- row.names(x_imputations[1])
+  ordo <- original_dataset[["Q"]][strtoi(index)]
+  imputed_points <- x_imputations %>%
+    as_tibble() %>%
+    gather() %>%
+    mutate(ordo=rep(ordo, length(x_imputations)))
+  if (plot_type=="simple") {
+    ggplot() +
+      geom_point(data = original_dataset, aes_string(y = "Q", x = column)) +
+      geom_point(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5) +
+      xlab(letters_dict[column]) + ylab("Fertility rate, births per woman")
+  } else if (plot_type=="model"){
+    ggplot() +
+      geom_point(data = original_dataset, aes_string(y = "Q", x = column)) +
+      geom_smooth(data = original_dataset, aes_string(y = "Q", x = column), se=se, method=method) +
+      geom_point(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5) +
+      geom_smooth(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5, se=se, method=method) +
+      xlab(letters_dict[column]) + ylab("Fertility rate, births per woman")
+  }
+
+}
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "A", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "AA", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "D", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "K", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "M", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "P", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "S", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "T", method = "auto")
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "U", method = "auto")
