@@ -208,10 +208,6 @@ step_on_mice <- function (mice_object, direction = "both") {
   }
   table(all_kept_var)
 }
-var_count <- step_on_mice(imputed_pmm)
-plot(var_count)
-fin_var_name <- names(var_count[var_count > 5])
-fin_var_name <- fin_var_name[fin_var_name!= "(Intercept)"]
 
 make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, intercept=TRUE){
   final_var <- step_on_mice_res[step_on_mice_res > threshold]
@@ -226,5 +222,6 @@ make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, inte
   with(data = mice_object, exp=lm(formula(format(formula_))))
 }
 var_count <- step_on_mice(imputed_pmm)
+plot(var_count)
 fit_selected_var <- make_linear_model(imputed_pmm, var_count)
 summary(pool(fit_selected_var))
