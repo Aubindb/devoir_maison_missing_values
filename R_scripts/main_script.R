@@ -259,3 +259,18 @@ plot_imputed(imputed_pmm, data_clean_numeric_mice, "P", method = "auto")
 plot_imputed(imputed_pmm, data_clean_numeric_mice, "S", method = "auto")
 plot_imputed(imputed_pmm, data_clean_numeric_mice, "T", method = "auto")
 plot_imputed(imputed_pmm, data_clean_numeric_mice, "U", method = "auto")
+
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "A", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "AA", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "D", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "K", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "M", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "P", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "S", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "T", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "U", method = "auto")
+
+som_res <- step_on_mice(imputed_pmm)
+make_linear_model(imputed_pmm, som_res)
+
+# Une fois que nous avons choisi 
