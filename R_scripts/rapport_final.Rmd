@@ -31,14 +31,83 @@ Il n'existe malheureusement de manière unique de traiter les valeurs manquantes
 
 Nous avons choisi d'analyser un jeu qui provient de la banque mondiale. L'institution financière internationale, dont le rôle est d'accorder des prêts afin d'encourager le développement, dispose d'un site permettant de requêter des données sur l'ensemble des pays. Nous avons choisi d'analyser les indicateurs les plus populaires (*Popular Indicators*). Le détail des variables ainsi que leurs sources sont disponibles dans le fichier `des.xlsx` à la racine du projet.  
 
+Le but final de notre étude sera d'implémenter un modèle pour expliquer et prévoir la fertilité.
+
 Nous chargeons les *packages* nécessaires à l'analyse :
 ```{r init, include=TRUE, warning=FALSE, results='hide'}
 library("tidyverse")
+library("magrittr")
 
 library("FactoMineR")
 library("factoextra") #http://www.sthda.com/english/rpkgs/factoextra/
 
 library("missMDA")
+library("mice")
+library("randomForest")
+library("FactoInvestigate")
+
 library("VIM")
+
+library(UpSetR)
+library(naniar)
 ```
-Nous chargeons les données :
+
+Après avoir chargé les données nous en observons la répartition des valeurs manquantes en leur sein.
+```{r}
+raw_data2 <- readxl::read_xlsx("data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
+raw_data2 %>%
+  summarise_all(funs(sum(is.na(.)))) / nrow(raw_data2) * 100 -> missing_values_pct
+gg_miss_var(raw_data2, show_pct = TRUE)
+```
+
+Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées. 
+```{r}
+missing_values_pct <- missing_values_pct %>% gather() %>% arrange(-value)
+inf_20_pct<-missing_values_pct %>% filter(value<=20)
+data_limited_missing <- raw_data2 %>% select(inf_20_pct$key)
+data_clean <- data_limited_missing %>% drop_na(`Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`)
+```
+
+Nous avons également choisi de supprimer les colonnes présentant des mesures de PIB par pays. En effet, nous disposons également du PIB par individu et de la population pour chaque pays, le PIB global n'apporte donc pas plus d'information.
+
+```{r}
+data_clean %<>% select(-c(`GNI, PPP (current international $) [NY.GNP.MKTP.PP.CD]`,
+                          `GNI, Atlas method (current US$) [NY.GNP.ATLS.CD]`,
+                          `GDP (current US$) [NY.GDP.MKTP.CD]`))
+```
+
+Afin de faciliter la lecture dans la suite de notre analyse, nous renomons les différentes colonnes par des lettres et conservons la correspondance dans un dictionnaire
+
+```{r}
+saved_names <- names(data_clean)
+LETTERS702 <- c(LETTERS, sapply(LETTERS, function(x) paste0(x, LETTERS)))
+names(data_clean) <- LETTERS702[1:dim(data_clean)[2]]
+
+letters_dict <- saved_names
+names(letters_dict) <- LETTERS702[1:dim(data_clean)[2]]
+```
+
+
+###Imputation des données manquantes et choix du modèle
+##Détermination du mécanisme
+
+Afin de choisir correctement la méthode d'imputation des données manquantes, il convient d'en déterminer le mécanisme. On considère 3 cas possibles (Little & Rubin) :
+*MCAR (missing completely at random) si probabilité d’absence est la même pour toutes les observations, c'est à dire qu'elle ne dépend que de paramètres extérieurs;
+*MAR (missing at random) lorsque la probabilité d’absence est liée à une ou plusieurs autres données observées;
+*MNAR (Missing not at random) si les données observées ne suffisent pas à expliquer les données manquantes, c'est à dire que ces dernières dépendent également des données manquantes.
+
+Afin d'analyser la répartition des valeurs manquantes, nous réalisons le graphique suivant à l'aide du package VIM
+
+```{r}
+VIM::aggr(data_clean)
+```
+
+Nous en déduisons qu'il ne semble pas exister de schéma spécifique de répartion de nos données manquantes. En effet, aucune répartition de ces dernières en fonction des variables n'apparaît avec une fréquence sensiblement supérieure aux autres. En revanche la répartition des valeurs manquantes selon les variables est très inégale, le cas le cas MCAR semble donc exclu dans notre échantillon.
+
+La distinction entre les cas MAR et MNAR n'est ici pas possible sans connaître la façon dont les données ont été collectées. Par défaut nous supposerons un mécanisme MAR et vérifierons la robustesse de ce choix à postériori.
+
+
+##Imputation et ACP
+
+P
+
