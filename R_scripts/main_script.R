@@ -92,7 +92,9 @@ ggplot(data = data_clean, mapping = aes(x = Q,
 
 # avec missMDA, on réalise une imputation multiple pour
 # mesurer l'incertitude sur les valeurs imputées :
-data_clean_numeric <- data_clean %>% select(which(sapply(.,is.numeric))) %>% as.data.frame(.)
+data_clean_numeric <- data_clean %>%
+  select(which(sapply(.,is.numeric))) %>%
+  as.data.frame(.)
 
 # ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
 data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
@@ -271,6 +273,6 @@ plot_imputed(imputed_normnob, data_clean_numeric_mice, "T", method = "auto")
 plot_imputed(imputed_normnob, data_clean_numeric_mice, "U", method = "auto")
 
 som_res <- step_on_mice(imputed_pmm)
-make_linear_model(imputed_pmm, som_res)
+make_linear_model(imputed_pmm, som_res) %>% summary()
 
 # Une fois que nous avons choisi 

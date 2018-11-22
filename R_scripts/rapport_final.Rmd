@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 
 Les données issues du monde réel sont souvent moins faciles à manipuler que celles formatées pour les salles de classe.  
-L'analyste doit fréquemment remanier les données afin d'obtenir un enregistrement par ligne et une variable par colonne (*tidy data*) et reformater les données (paramètres régionaux, formats des dates, codage des catégories...). 
+L'analyste doit fréquemment remanier les données afin d'obtenir un enregistrement par ligne et une variable par colonne (*tidy data*) ainsi que reformater les données (paramètres régionaux, formats des dates, codage des catégories...). 
 Très souvent, les jeux de données contiennent également des valeurs manquantes. Cela peut-être dû à une multitude de facteurs :
 
 * défaillance matérielle (capteur en panne par exemple)
@@ -25,13 +25,13 @@ Très souvent, les jeux de données contiennent également des valeurs manquante
 * individu faisant parti d'une cohorte n'étant plus en mesure de répondre...  
 
 A chaque fois, l'analyste devra déterminer quels sont les raisons de la présence de ces valeurs manquantes avant de trouver une solution pour y remédier.  
-Il n'existe malheureusement de manière unique de traiter les valeurs manquantes. Plusieurs techniques pourront être essayés afin de trouver la meilleure solution dans un cas donné. Le but de l'imputation est donc de compléter un jeu de données sans changer la structure des données réelles. En effet, une mauvaise imputation ou l'abandon de certaines observations peut conduire à des analyses biasées.
+Il n'existe malheureusement pas de manière unique de traiter les valeurs manquantes. Plusieurs techniques pourront être essayés afin de trouver la meilleure solution dans un cas donné. Le but de l'imputation est donc de compléter un jeu de données sans changer la structure des données réelles. En effet, une mauvaise imputation ou l'abandon de certaines observations peut conduire à des analyses biasées.
 
 ### Présentation du jeu et analyse exploratoire
 
 Nous avons choisi d'analyser un jeu qui provient de la banque mondiale. L'institution financière internationale, dont le rôle est d'accorder des prêts afin d'encourager le développement, dispose d'un site permettant de requêter des données sur l'ensemble des pays. Nous avons choisi d'analyser les indicateurs les plus populaires (*Popular Indicators*). Le détail des variables ainsi que leurs sources sont disponibles dans le fichier `des.xlsx` à la racine du projet.  
 
-Le but final de notre étude sera d'implémenter un modèle pour expliquer et prévoir la fertilité.
+Le but final de notre étude sera d'implémenter un modèle pour expliquer et prévoir le nombre d'enfants par femme dans un pays donné.
 
 Nous chargeons les *packages* nécessaires à l'analyse :
 ```{r init, include=TRUE, warning=FALSE, results='hide'}
@@ -54,13 +54,14 @@ library(naniar)
 
 Après avoir chargé les données nous en observons la répartition des valeurs manquantes en leur sein.
 ```{r}
-raw_data2 <- readxl::read_xlsx("data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
+raw_data2 <- readxl::read_xlsx("../data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
 raw_data2 %>%
   summarise_all(funs(sum(is.na(.)))) / nrow(raw_data2) * 100 -> missing_values_pct
 gg_miss_var(raw_data2, show_pct = TRUE)
 ```
 
-Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées. 
+Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées.  
+Nous abandonnons également les enregistrements sur lesquels notre *target variable* n'a pas de valeur. La variable `data clean` contient donc un `Tible` qui sera utilisé comme point de départ des imputations.
 ```{r}
 missing_values_pct <- missing_values_pct %>% gather() %>% arrange(-value)
 inf_20_pct<-missing_values_pct %>% filter(value<=20)
@@ -76,7 +77,7 @@ data_clean %<>% select(-c(`GNI, PPP (current international $) [NY.GNP.MKTP.PP.CD
                           `GDP (current US$) [NY.GDP.MKTP.CD]`))
 ```
 
-Afin de faciliter la lecture dans la suite de notre analyse, nous renomons les différentes colonnes par des lettres et conservons la correspondance dans un dictionnaire
+Afin de faciliter la lecture dans la suite de notre analyse, nous renomons les différentes colonnes par des lettres et conservons la correspondance dans un dictionnaire.
 
 ```{r}
 saved_names <- names(data_clean)
@@ -87,14 +88,16 @@ letters_dict <- saved_names
 names(letters_dict) <- LETTERS702[1:dim(data_clean)[2]]
 ```
 
+La méthode de l'imputation multiple sera privilégiée tout au long de ce devoir afin de pouvoir estimer l'incertitude associée à notre imputation.  
 
-###Imputation des données manquantes et choix du modèle
-##Détermination du mécanisme
+## Imputation des données manquantes et choix du modèle
+### Détermination du mécanisme
 
 Afin de choisir correctement la méthode d'imputation des données manquantes, il convient d'en déterminer le mécanisme. On considère 3 cas possibles (Little & Rubin) :
-*MCAR (missing completely at random) si probabilité d’absence est la même pour toutes les observations, c'est à dire qu'elle ne dépend que de paramètres extérieurs;
-*MAR (missing at random) lorsque la probabilité d’absence est liée à une ou plusieurs autres données observées;
-*MNAR (Missing not at random) si les données observées ne suffisent pas à expliquer les données manquantes, c'est à dire que ces dernières dépendent également des données manquantes.
+  
+* MCAR (missing completely at random) si probabilité d’absence est la même pour toutes les observations, c'est à dire qu'elle ne dépend que de paramètres extérieurs;
+* MAR (missing at random) lorsque la probabilité d’absence est liée à une ou plusieurs autres données observées;
+* MNAR (Missing not at random) si les données observées ne suffisent pas à expliquer les données manquantes, c'est à dire que ces dernières dépendent également des données manquantes.
 
 Afin d'analyser la répartition des valeurs manquantes, nous réalisons le graphique suivant à l'aide du package VIM
 
@@ -107,7 +110,22 @@ Nous en déduisons qu'il ne semble pas exister de schéma spécifique de répart
 La distinction entre les cas MAR et MNAR n'est ici pas possible sans connaître la façon dont les données ont été collectées. Par défaut nous supposerons un mécanisme MAR et vérifierons la robustesse de ce choix à postériori.
 
 
-##Imputation et ACP
+### Imputation et ACP
 
-P
+Dans un premier temps, nous implémentons l'algorithme de l'ACP itératif afin de réaliser une imputation multiple. 
+L'explication détaillée de l'algorithme est disponible ci-dessous pour rappel :
+<iframe width="560" height="315" src="https://www.youtube.com/watch?v=OOM8_FH6_8o?rel=0" frameborder="0" allowfullscreen></iframe>
+
+Le *chunk* suivant permet de régler quelques détails, notamment la conversion en `data.frame` base R et le centrage réduction des données. 
+```{r}
+data_clean_numeric <- data_clean %>%
+  select(which(sapply(.,is.numeric))) %>%
+  as.data.frame(.)
+
+# ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
+data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
+# On sort la variable cible :
+target <- data_clean_numeric$Q
+data_clean_numeric %<>% select(-Q)
+```
 
