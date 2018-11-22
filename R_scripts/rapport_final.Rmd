@@ -34,7 +34,10 @@ Nous avons choisi d'analyser un jeu qui provient de la banque mondiale. L'instit
 Le but final de notre étude sera d'implémenter un modèle pour expliquer et prévoir le nombre d'enfants par femme dans un pays donné.
 
 Nous chargeons les *packages* nécessaires à l'analyse :
-```{r init, include=TRUE, warning=FALSE, results='hide'}
+  
+> Code R masqué.
+
+```{r init, include=F, warning=FALSE, results='hide'}
 library("tidyverse")
 library("magrittr")
 
@@ -113,10 +116,10 @@ La distinction entre les cas MAR et MNAR n'est ici pas possible sans connaître 
 ### Imputation et ACP
 
 Dans un premier temps, nous implémentons l'algorithme de l'ACP itératif afin de réaliser une imputation multiple. 
-L'explication détaillée de l'algorithme est disponible ci-dessous pour rappel :
-<iframe width="560" height="315" src="https://www.youtube.com/watch?v=OOM8_FH6_8o?rel=0" frameborder="0" allowfullscreen></iframe>
+L'explication détaillée de l'algorithme est disponible sur [YouTube](https://www.youtube.com/watch?v=OOM8_FH6_8o).
 
-Le *chunk* suivant permet de régler quelques détails, notamment la conversion en `data.frame` base R et le centrage réduction des données. 
+Le *chunk* suivant permet de régler quelques détails, notamment la conversion en `data.frame` base R et le centrage réduction des données.   
+Nous enlevons la variable cible afin d'éviter le **surapprentissage**.
 ```{r}
 data_clean_numeric <- data_clean %>%
   select(which(sapply(.,is.numeric))) %>%
@@ -127,5 +130,21 @@ data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 # On sort la variable cible :
 target <- data_clean_numeric$Q
 data_clean_numeric %<>% select(-Q)
+```
+Puis nous utilisons l'algorithme avec 10 *resampling* via *Parametric Bootstrap (Josse, J., Husson, F. (2010))*:
+```{r}
+nbdim <- estim_ncpPCA(data_clean_numeric)
+res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 10)
+imp<-prelim(res.comp, data_clean_numeric)
+```
+la fonction `prelim` permet d'obtenir un objet de type `mids` et d'utiliser les capacités graphiques du package `mice`.
+Nous commençons par les graphiques prévus par MissMDA :
+```{r, fig.keep='all',fig.show='hold', error=F}
+plot(res.comp)
+```
+Puis nous utilisons les fonctions `densityplot` et `stripplot` du *package* `mice` :
+```{r}
+densityplot(imp)
+stripplot(imp, pch = 20, cex = 1.2)
 ```
 
