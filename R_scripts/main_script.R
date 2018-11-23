@@ -122,6 +122,31 @@ data_imputed <- res.comp[["res.imputePCA"]]
 
 res<-PCA(data_imputed)
 plot(res)
+
+fviz_screeplot(res, addlabels = TRUE, ylim = c(0, 35))
+# Control variable colors using their contributions
+fviz_pca_var(res, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE) # Avoid text overlapping)
+
+# Représentation des individus : graphique peu lisible :
+#fviz_pca_ind(res, col.ind = "cos2",
+#             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#             repel = TRUE) # Avoid text overlapping (slow if many points)
+
+
+# Les contributions des variables à l'axe 1
+fviz_contrib(res, choice = "var", axes = 1, top = 10)
+# Les contributions des variables à l'axe 2
+fviz_contrib(res, choice = "var", axes = 2, top = 10)
+
+fviz_pca_ind(res,
+             label = "none", # hide individual labels
+             habillage = cut(target,3), # color by groups
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE # Concentration ellipses
+)
+
 Investigate(res)
 # modélisation avec 5 dimensions
 ind_coord <- res[["ind"]][["coord"]] %>% as_tibble()

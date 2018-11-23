@@ -4,9 +4,12 @@ author: "Aubin de Belleroche, Camille Moatti"
 date: "01 Novembre 2018"
 output:
   html_document:
-    toc: true
-    toc_float: true
+    toc: yes
     toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
@@ -69,7 +72,8 @@ Nous abandonnons également les enregistrements sur lesquels notre *target varia
 missing_values_pct <- missing_values_pct %>% gather() %>% arrange(-value)
 inf_20_pct<-missing_values_pct %>% filter(value<=20)
 data_limited_missing <- raw_data2 %>% select(inf_20_pct$key)
-data_clean <- data_limited_missing %>% drop_na(`Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`)
+data_clean <- data_limited_missing %>%
+  drop_na(`Fertility rate, total (births per woman) [SP.DYN.TFRT.IN]`)
 ```
 
 Nous avons également choisi de supprimer les colonnes présentant des mesures de PIB par pays. En effet, nous disposons également du PIB par individu et de la population pour chaque pays, le PIB global n'apporte donc pas plus d'information.
@@ -142,9 +146,80 @@ Nous commençons par les graphiques prévus par MissMDA :
 ```{r, fig.keep='all',fig.show='hold', error=F}
 plot(res.comp)
 ```
+
+Les graphiques montrent que les axes sont stables entre les n imputations. De plus, les valeurs imputées ont une variabilité plutôt limitée. Nous pouvons noter que les variables A et C sont mal représentées.
+
 Puis nous utilisons les fonctions `densityplot` et `stripplot` du *package* `mice` :
 ```{r}
 densityplot(imp)
 stripplot(imp, pch = 20, cex = 1.2)
+```
+
+Le `stripplot` permet de bien visualiser la stabilité des valeurs imputées (points rouges) d'une imputation à l'autre. En abscisse, les n imputations sont représentées. En ordonnées, nous avons les valeurs imputées. Pour s'assurer de la robustesse de la procédure d'imputation, il faut que les points rouges soient similaires tout au long de l'axe des abscisses. Pour cette raison, les valeurs imputées sur les variables P et U ne sont pas satisfaisantes. Cependant, nous ne les enlevons pas à ce stade.  
+  
+Afin de continuer vers la modélisation, nous choisissons dans un premier temps de réduire le nombre de dimensions :
+```{r}
+# Le tableau avec les valeurs imputées est disponible comme ceci :
+data_imputed <- res.comp[["res.imputePCA"]]
+
+res<-PCA(data_imputed, graph = F)
+# plot(res)
+```
+Même si la première dimension domine largement les autres, il semble opportun de garder quatre dimensions supplémentaires (72% de variance conservée) :
+```{r}
+fviz_screeplot(res, addlabels = TRUE, ylim = c(0, 35))
+```
+
+```{r}
+# Les variables en fonction de leurs contributions :
+fviz_pca_var(res, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             )
+```
+  
+Hormis les variables A et C, les contributions sont acceptables.
+```{r}
+# Enlever ce chunk ?
+# Les contributions des variables à l'axe 1
+fviz_contrib(res, choice = "var", axes = 1, top = 10)
+# Les contributions des variables à l'axe 2
+fviz_contrib(res, choice = "var", axes = 2, top = 10)
+```
+
+La fonction `Investigate(res)` du package `FactoInvestigate` permet de générer un rapport automatisé sur notre ACP. Cette analyse peut servir de point de départ afin d'affiner l'interprétation. 
+(A COMPLETER)
+
+Nous pouvons d'ores et déjà visualiser la fertilitité sur les deux premiers axes de notre ACP. Pour ce faire, nous créons trois catégorie à partir de la variable continue cible. Ces trois catégories peuvent être interprétées comme des niveaux du nombre d'enfants par femme (élevé, moyen et faible). Pour ce faire, nous utilisons la fonction `cut` :
+```{r}
+fviz_pca_ind(res,
+             label = "none",
+             habillage = cut(target,3),
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE)
+```
+  
+Avec seulement deux dimensions, nous observons qu'un point ayant une valeur positive sur la première dimension appartient presque toujours à la première catégorie (faible fertilité).  
+Les deux autres catégories, bien que plus proches, permettent d'observer que les pays où les femmes ont beaucoup d'enfants tendent à avoir une valeur très négative sur la première dimension.  
+Le visualisation de la seconde dimension par rapport à la troisième est plus difficile à interpréter de prime abord :
+
+```{r}
+fviz_pca_ind(res,
+             axes=c(2,3),
+             label = "none",
+             habillage = cut(target,3),
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE)
+```
+
+Notre première modélisation, effectuée après imputation des valeurs manquantes et réduction de la dimension à cinq axes, permet d'obtenir un R ajusté de 78%.
+
+```{r}
+# modélisation avec 5 dimensions
+ind_coord <- res[["ind"]][["coord"]] %>% as_tibble()
+ind_coord_target <- ind_coord %>% mutate(target = target)
+fit <- lm(target~.-1, ind_coord_target)
+summary(fit)
+# plot(fit)
 ```
 
