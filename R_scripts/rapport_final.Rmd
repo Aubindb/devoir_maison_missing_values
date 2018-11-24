@@ -225,12 +225,43 @@ summary(fit)
 
 ### Imputation et Algorithme Mice
 
-L'algorithme utilisé dans le package Mice a été dévelopé par Stef van Buuren. Tout comme l'algorithme implémenté dans MissMDA, dévelopé par François Husson, Mice utilise une approche itérative afin d'imputer les valeurs manquantes. L'approche multiple permet de mesurer l'incertitude quant aux valeurs imputées.  
+L'algorithme utilisé dans le package Mice (**M**ultivariate **I**mputation by **C**hained **E**quations) a été dévelopé par Stef van Buuren. Tout comme l'algorithme implémenté dans MissMDA, dévelopé par François Husson, Mice utilise une approche itérative afin d'imputer les valeurs manquantes. L'approche multiple permet de mesurer l'incertitude quant aux valeurs imputées.  
 Afin d'effectuer notre analyse, nous allons utiliser la fonction `mice()` en variant les méthodes d'imputation.  
 `mice` est une méthode de Monte Carlo par chaines de Markov qui utilise la structure des corrélations pour trouver des valeurs plausibles sur les jeux incomplets.  
 Nous allons essayer trois méthodes :
   
-* *Predictive Mean Matching (Rubin 1986, Little 1988)* : Cette méthode est la méthode par défaut de la fonction `mice()`. Cependant, aucune théorie mathématique n'a prouvé la pertinence de cette méthode. Toutefois, cette méthode permet de conserver 
-* Linear Regression Ignoring Model Error :
-* Random Forest :
+* *Predictive Mean Matching (Rubin 1986, Little 1988)* : Cette méthode est la méthode par défaut de la fonction `mice()`. Cependant, aucune théorie mathématique n'a prouvé la pertinence de cette méthode. Toutefois, cette méthode permet d'imputer avec des valeurs empruntées aux autres observations. Par exemple, sur une colonne d'entiers, *pmm* imputera des entiers. Les valeurs imputées seront contenues entre la borne minimum et maximum de la variable. Ces qualités ont rendu cette méthode assez populaire. [Cet article](https://statisticalhorizons.com/predictive-mean-matching) explique l'algorithme en détail ainsi que ses limites.
+* *Linear Regression Ignoring Model Error* : Cette seconde méthode utilise un modèle linéaire afin d'estimer les valeurs manquantes. Cependant, l'algorithme ajoute un bruit gaussien à la prédiction afin d'eviter l'*overfitting*. Mice propose d'autres algorithmes d'imputations s'appuyant sur le modèle linéaire gaussien. [Cette page](https://stefvanbuuren.name/fimd/sec-linearnormal.html) les explique en détail. Nous utiliserons donc `norm.nob`.
+* *Random Forest* : Cet algorithme ensembliste est une amélioration de l'arbre de décision simple. Il est utilisé dans le cadre de l'apprentissage statistique afin de réduire la tendance à l'*overfitting* des arbres. Tout comme les arbres, il peut être utilisé pour prédire des variables continues. Ces méthodes sont robustes aux *outliers*, gèrent la multicollinéarité et les distributions assymétriques. Cela est appréciable dans le cadre de l'imputation.
+[Cette page](https://stefvanbuuren.name/fimd/sec-cart.html) peut être consultée pour plus de détails.
+
+Tout comme précédemment, nous remanions légèrement notre tableau afin d'assurer sa compatibilité avec `mice`. Grâce à `predictorMatrix`, nous pouvons empêcher la variable `Q` d'être utilisée lors de l'imputation :
+
+```{r}
+# Second mode opératoire avec mice. On va utiliser plusieurs méthodes
+# offertes par le package afin de compléter les valeurs manquantes
+# et de construire un modèle :
+data_clean_numeric_mice <- data_clean %>% 
+  select(which(sapply(.,is.numeric)))
+data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>%
+  as.data.frame(.)
+# On sort la variable cible. Etant donné le fonctionnement particulier
+# de pool, il est difficile d'ajouter une colonne "target" avant le modeling
+# comme nous l'avons fait avec missMDA. Cependant, l'utilisation
+# du paramètre predictorMatrix nous permet d'exclure une variable
+# lors de l'imputation :
+imp <- mice(data_clean_numeric_mice, print = FALSE)
+pred <- imp$predictorMatrix
+pred[, "Q"] <- 0
+```
+
+Nous imputons avec les trois méthodes décrites précédemment. Dix imputations sont réalisées pour chaque méthode :
+```{r}
+#Predictive mean matching
+imputed_pmm = mice(data_clean_numeric_mice, pred = pred, method="pmm", m=10)
+#Linear regression ignoring model error
+imputed_normnob = mice(data_clean_numeric_mice, pred = pred, method="norm.nob", m=10)
+#random forest
+imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=10)
+```
 

@@ -158,8 +158,10 @@ plot(fit)
 # Second mode opératoire avec mice. On va utiliser plusieurs méthodes
 # offertes par le package afin de compléter les valeurs manquantes
 # et de construire un modèle :
-data_clean_numeric_mice <- data_clean %>% select(which(sapply(.,is.numeric)))
-data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
+data_clean_numeric_mice <- data_clean %>% 
+  select(which(sapply(.,is.numeric)))
+data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>%
+  as.data.frame(.)
 # On sort la variable cible. Etant donné le fonctionnement particulier
 # de pool, il est difficile d'ajouter une colonne "target" avant le modeling
 # comme nous l'avons fait avec missMDA. Cependant, l'utilisation
@@ -168,9 +170,6 @@ data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>% as.data.frame(.)
 imp <- mice(data_clean_numeric_mice, print = FALSE)
 pred <- imp$predictorMatrix
 pred[, "Q"] <- 0
-
-# pmm : predictive mean matching : pb > la matrice n'est pas inversible
-# voir https://www.kaggle.com/c/house-prices-advanced-regression-techniques/discussion/24586
 
 #random forest
 imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=5)
