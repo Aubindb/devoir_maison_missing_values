@@ -223,3 +223,14 @@ summary(fit)
 # plot(fit)
 ```
 
+### Imputation et Algorithme Mice
+
+L'algorithme utilisé dans le package Mice a été dévelopé par Stef van Buuren. Tout comme l'algorithme implémenté dans MissMDA, dévelopé par François Husson, Mice utilise une approche itérative afin d'imputer les valeurs manquantes. L'approche multiple permet de mesurer l'incertitude quant aux valeurs imputées.  
+Afin d'effectuer notre analyse, nous allons utiliser la fonction `mice()` en variant les méthodes d'imputation.  
+`mice` est une méthode de Monte Carlo par chaines de Markov qui utilise la structure des corrélations pour trouver des valeurs plausibles sur les jeux incomplets.  
+Nous allons essayer trois méthodes :
+  
+* *Predictive Mean Matching (Rubin 1986, Little 1988)* : Cette méthode est la méthode par défaut de la fonction `mice()`. Cependant, aucune théorie mathématique n'a prouvé la pertinence de cette méthode. Toutefois, cette méthode permet de conserver 
+* Linear Regression Ignoring Model Error :
+* Random Forest :
+
