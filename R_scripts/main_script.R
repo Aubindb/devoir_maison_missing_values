@@ -24,7 +24,7 @@ raw_data2 <- readxl::read_xlsx("data/Popular Indicators.xlsx", na="..") %>% filt
 raw_data2 %>%
   summarise_all(funs(sum(is.na(.)))) / nrow(raw_data2) * 100 -> missing_values_pct
 #Graphiquement 
-gg_miss_var(raw_data2, show_pct = TRUE)
+gg_miss_var(raw_data2, , show_pct = TRUE)
 
 # On peut trier de la colonne avec le plus de valeurs manquantes à celle qui
 # en a le moins :

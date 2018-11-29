@@ -67,7 +67,8 @@ raw_data2 %>%
 gg_miss_var(raw_data2, show_pct = TRUE)
 ```
 
-Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées.  
+Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées. 
+
 Nous abandonnons également les enregistrements sur lesquels notre *target variable* n'a pas de valeur. La variable `data clean` contient donc un `Tible` qui sera utilisé comme point de départ des imputations.
 
 ```{r}
@@ -132,9 +133,8 @@ data_clean_numeric <- data_clean %>%
   select(which(sapply(.,is.numeric))) %>%
   as.data.frame(.)
 
-# ajout 3/11 : centrage et réduction des données, conseillé avant PCA :
 data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
-# On sort la variable cible :
+
 target <- data_clean_numeric$Q
 data_clean_numeric %<>% select(-Q)
 ```
@@ -168,11 +168,9 @@ Le `stripplot` permet de bien visualiser la stabilité des valeurs imputées (po
 Afin de continuer vers la modélisation, nous choisissons dans un premier temps de réduire le nombre de dimensions :
 
 ```{r}
-# Le tableau avec les valeurs imputées est disponible comme ceci :
 data_imputed <- res.comp[["res.imputePCA"]]
 
 res<-PCA(data_imputed, graph = F)
-# plot(res)
 ```
 
 Même si la première dimension domine largement les autres, il semble opportun de garder quatre dimensions supplémentaires (72% de variance conservée), en effet la première ne modélise que 31,1% de l'inertie de notre jeu de donnée. On constate également un coude après la cinquième dimension, ce qui nous conforte dans notre choix.
@@ -180,20 +178,17 @@ Même si la première dimension domine largement les autres, il semble opportun 
 ```{r, fig.show = 'hold', out.width = '50%'}
 fviz_screeplot(res, addlabels = TRUE, ylim = c(0, 35))
 
-# Les variables en fonction de leurs contributions :
 fviz_pca_var(res, col.var="contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE # Avoid text overlapping
              )
 ```
   
-Hormis les variables A et C, les contributions sont acceptables.
+Nous notons que, hormis A et C, les variables contribuent toutes correctement aux premier plan, certaines bien plus que d'autres. Il est apparent que M, N et D contribuent à l'axe 1 très négativement et qu'à l'inverse T, J, P, F, U et K ont un impact très positif. Ces variables n'ont en revanche que peu d'impact sur l'axe 2 à l'inverse de I, L et H qui contribuent négativent à ce dernier et positivement au premier. Enfin un le groupe restant a une plus faible contribution positive à l'axe 2 tout en étant réparti sur l'axe 1.
 
 ```{r, fig.show = 'hold', out.width = '50%'}
-# Enlever ce chunk ?
-# Les contributions des variables à l'axe 1
 fviz_contrib(res, choice = "var", axes = 1, top = 10)
-# Les contributions des variables à l'axe 2
+
 fviz_contrib(res, choice = "var", axes = 2, top = 10)
 ```
 
@@ -226,12 +221,10 @@ fviz_pca_ind(res,
 Notre première modélisation, effectuée après imputation des valeurs manquantes et réduction de la dimension à cinq axes, permet d'obtenir un R ajusté de 78%.
 
 ```{r}
-# modélisation avec 5 dimensions
 ind_coord <- res[["ind"]][["coord"]] %>% as_tibble()
 ind_coord_target <- ind_coord %>% mutate(target = target)
 fit <- lm(target~.-1, ind_coord_target)
 summary(fit)
-# plot(fit)
 ```
 
 ### Imputation et Algorithme Mice
@@ -262,11 +255,10 @@ pred[, "Q"] <- 0
 Nous imputons avec les trois méthodes décrites précédemment. Dix imputations sont réalisées pour chaque méthode :
 
 ```{r, results='hide'}
-#Predictive mean matching
 imputed_pmm = mice(data_clean_numeric_mice, pred = pred, method="pmm", m=10)
-#Linear regression ignoring model error
+
 imputed_normnob = mice(data_clean_numeric_mice, pred = pred, method="norm.nob", m=10)
-#random forest
+
 imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=10)
 ```
 
@@ -367,4 +359,6 @@ fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
 anova(fit.with, fit.without)
 ```
 
-Au final nous obtenons 3 modèles relativement similaires (A COMPLETER SELON CHOIX DES VARIABLES A CONSERVER)
+Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires (A COMPLETER SELON CHOIX DES VARIABLES A CONSERVER), où la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie, les émissions de CO2 et le nombre de souscription à des portables.
+
+Ces résultats semblent assez intuitifs, les pays les plus développés et les plus riches sont réputés pour avoir des taux de fécondité plus faibles. En revanche les variables explicatives selectionnées peuvent avoir de quoi surprendre par rapport à d'autres indicateurs à priori plus directs.
