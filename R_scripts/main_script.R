@@ -172,7 +172,7 @@ pred <- imp$predictorMatrix
 pred[, "Q"] <- 0
 
 #random forest
-imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=5)
+imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=10)
 pdf("output/mice/random_forest/plots.pdf")
 densityplot(imputed_rf)
 stripplot(imputed_rf, pch = 20, cex = 1.2)
@@ -228,7 +228,7 @@ step_on_mice <- function (mice_object, direction = "both") {
   len <- length(fit$analyses)
   all_kept_var <- vector()
   for (i in 1:len) {
-    mod_step <- step(fit$analyses[[i]], direction = direction)
+    mod_step <- step(fit$analyses[[i]], direction = direction,trace=0)
     kept_var <- names(mod_step[["coefficients"]])
     all_kept_var <- c(all_kept_var, kept_var)
   }
@@ -247,10 +247,52 @@ make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, inte
   print(formula_)
   with(data = mice_object, exp=lm(formula(format(formula_))))
 }
+
+#PMM
 var_count <- step_on_mice(imputed_pmm)
 plot(var_count)
 fit_selected_var <- make_linear_model(imputed_pmm, var_count)
 summary(pool(fit_selected_var))
+
+
+#Normnob
+
+var_count <- step_on_mice(imputed_normnob)
+plot(var_count)
+fit_selected_var <- make_linear_model(imputed_normnob, var_count)
+summary(pool(fit_selected_var))
+
+fit.without <- with(imputed_normnob, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+fit.with <- with(imputed_normnob, lm(Q ~ A + AA + D + K + L + M + P + S + T + U))
+anova(fit.with, fit.without) #on ne conserve pas a
+
+fit.without <- with(imputed_normnob, lm(Q ~ AA + D + K + M + P + S + T + U))
+fit.with <- with(imputed_normnob, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+anova(fit.with, fit.without) #on ne conserve pas L
+
+fit.without <- with(imputed_normnob, lm(Q ~ D + K + M + P + S + T + U))
+fit.with <- with(imputed_normnob, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)#conserver??? pv = 0.08
+
+
+#rf
+
+var_count <- step_on_mice(imputed_rf)
+plot(var_count)
+fit_selected_var <- make_linear_model(imputed_rf, var_count)
+summary(pool(fit_selected_var))
+
+fit.without <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+anova(fit.with, fit.without)#conserve pas L
+
+fit.without <- with(imputed_rf, lm(Q ~ D + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without) #conserve?? pv= 0.0
+
+fit.without <- with(imputed_rf, lm(Q ~ AA + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)
 # plot
 
 plot_imputed <- function(mice_object, original_dataset, column, plot_type="model", se=F, method="auto"){

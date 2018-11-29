@@ -3,13 +3,13 @@ title: "Devoir ACP et valeurs manquantes, Novembre 2018"
 author: "Aubin de Belleroche, Camille Moatti"
 date: "01 Novembre 2018"
 output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
   html_document:
     toc: yes
     toc_depth: 3
     toc_float: yes
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
@@ -58,7 +58,8 @@ library(UpSetR)
 library(naniar)
 ```
 
-Après avoir chargé les données nous en observons la répartition des valeurs manquantes en leur sein.
+Après avoir chargé les données nous observons la répartition des valeurs manquantes en leur sein.
+
 ```{r}
 raw_data2 <- readxl::read_xlsx("../data/Popular Indicators.xlsx", na="..") %>% filter(Time==2010)
 raw_data2 %>%
@@ -68,6 +69,7 @@ gg_miss_var(raw_data2, show_pct = TRUE)
 
 Nous remarquons qu'un certain nombre de variables ont un pourcentage de valeurs manquantes très élevé. Etant donné le peu d'individus présents dans l'échantillon, nous avons considéré que les variables présentant un taux de valeurs manquantes supérieur à 20% ne présentaient pas assez de données pour imputer sans risque d'abimer le modèle. Les colonnes correspondantes ont donc été supprimées.  
 Nous abandonnons également les enregistrements sur lesquels notre *target variable* n'a pas de valeur. La variable `data clean` contient donc un `Tible` qui sera utilisé comme point de départ des imputations.
+
 ```{r}
 missing_values_pct <- missing_values_pct %>% gather() %>% arrange(-value)
 inf_20_pct<-missing_values_pct %>% filter(value<=20)
@@ -124,6 +126,7 @@ L'explication détaillée de l'algorithme est disponible sur [YouTube](https://w
 
 Le *chunk* suivant permet de régler quelques détails, notamment la conversion en `data.frame` base R et le centrage réduction des données.   
 Nous enlevons la variable cible afin d'éviter le **surapprentissage**.
+
 ```{r}
 data_clean_numeric <- data_clean %>%
   select(which(sapply(.,is.numeric))) %>%
@@ -135,14 +138,18 @@ data_clean_numeric <- scale(data_clean_numeric) %>% as.data.frame(.)
 target <- data_clean_numeric$Q
 data_clean_numeric %<>% select(-Q)
 ```
+
 Puis nous utilisons l'algorithme avec 10 *resampling* via *Parametric Bootstrap (Josse, J., Husson, F. (2010))*:
+
 ```{r}
 nbdim <- estim_ncpPCA(data_clean_numeric)
 res.comp <- MIPCA(data_clean_numeric, ncp = nbdim$ncp, scale=TRUE, nboot = 10)
 imp<-prelim(res.comp, data_clean_numeric)
 ```
-la fonction `prelim` permet d'obtenir un objet de type `mids` et d'utiliser les capacités graphiques du package `mice`.
+
+La fonction `prelim` permet d'obtenir un objet de type `mids` et d'utiliser les capacités graphiques du package `mice`.
 Nous commençons par les graphiques prévus par MissMDA :
+
 ```{r, fig.keep='all',fig.show='hold', error=F}
 plot(res.comp)
 ```
@@ -150,6 +157,7 @@ plot(res.comp)
 Les graphiques montrent que les axes sont stables entre les n imputations. De plus, les valeurs imputées ont une variabilité plutôt limitée. Nous pouvons noter que les variables A et C sont mal représentées.
 
 Puis nous utilisons les fonctions `densityplot` et `stripplot` du *package* `mice` :
+
 ```{r}
 densityplot(imp)
 stripplot(imp, pch = 20, cex = 1.2)
@@ -158,6 +166,7 @@ stripplot(imp, pch = 20, cex = 1.2)
 Le `stripplot` permet de bien visualiser la stabilité des valeurs imputées (points rouges) d'une imputation à l'autre. En abscisse, les n imputations sont représentées. En ordonnées, nous avons les valeurs imputées. Pour s'assurer de la robustesse de la procédure d'imputation, il faut que les points rouges soient similaires tout au long de l'axe des abscisses. Pour cette raison, les valeurs imputées sur les variables P et U ne sont pas satisfaisantes. Cependant, nous ne les enlevons pas à ce stade.  
   
 Afin de continuer vers la modélisation, nous choisissons dans un premier temps de réduire le nombre de dimensions :
+
 ```{r}
 # Le tableau avec les valeurs imputées est disponible comme ceci :
 data_imputed <- res.comp[["res.imputePCA"]]
@@ -165,12 +174,12 @@ data_imputed <- res.comp[["res.imputePCA"]]
 res<-PCA(data_imputed, graph = F)
 # plot(res)
 ```
-Même si la première dimension domine largement les autres, il semble opportun de garder quatre dimensions supplémentaires (72% de variance conservée) :
-```{r}
-fviz_screeplot(res, addlabels = TRUE, ylim = c(0, 35))
-```
 
-```{r}
+Même si la première dimension domine largement les autres, il semble opportun de garder quatre dimensions supplémentaires (72% de variance conservée), en effet la première ne modélise que 31,1% de l'inertie de notre jeu de donnée. On constate également un coude après la cinquième dimension, ce qui nous conforte dans notre choix.
+
+```{r, fig.show = 'hold', out.width = '50%'}
+fviz_screeplot(res, addlabels = TRUE, ylim = c(0, 35))
+
 # Les variables en fonction de leurs contributions :
 fviz_pca_var(res, col.var="contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
@@ -179,7 +188,8 @@ fviz_pca_var(res, col.var="contrib",
 ```
   
 Hormis les variables A et C, les contributions sont acceptables.
-```{r}
+
+```{r, fig.show = 'hold', out.width = '50%'}
 # Enlever ce chunk ?
 # Les contributions des variables à l'axe 1
 fviz_contrib(res, choice = "var", axes = 1, top = 10)
@@ -191,6 +201,7 @@ La fonction `Investigate(res)` du package `FactoInvestigate` permet de générer
 (A COMPLETER)
 
 Nous pouvons d'ores et déjà visualiser la fertilitité sur les deux premiers axes de notre ACP. Pour ce faire, nous créons trois catégorie à partir de la variable continue cible. Ces trois catégories peuvent être interprétées comme des niveaux du nombre d'enfants par femme (élevé, moyen et faible). Pour ce faire, nous utilisons la fonction `cut` :
+
 ```{r}
 fviz_pca_ind(res,
              label = "none",
@@ -238,25 +249,19 @@ Nous allons essayer trois méthodes :
 Tout comme précédemment, nous remanions légèrement notre tableau afin d'assurer sa compatibilité avec `mice`. Grâce à `predictorMatrix`, nous pouvons empêcher la variable `Q` d'être utilisée lors de l'imputation :
 
 ```{r}
-# Second mode opératoire avec mice. On va utiliser plusieurs méthodes
-# offertes par le package afin de compléter les valeurs manquantes
-# et de construire un modèle :
 data_clean_numeric_mice <- data_clean %>% 
   select(which(sapply(.,is.numeric)))
 data_clean_numeric_mice <- scale(data_clean_numeric_mice) %>%
   as.data.frame(.)
-# On sort la variable cible. Etant donné le fonctionnement particulier
-# de pool, il est difficile d'ajouter une colonne "target" avant le modeling
-# comme nous l'avons fait avec missMDA. Cependant, l'utilisation
-# du paramètre predictorMatrix nous permet d'exclure une variable
-# lors de l'imputation :
+
 imp <- mice(data_clean_numeric_mice, print = FALSE)
 pred <- imp$predictorMatrix
 pred[, "Q"] <- 0
 ```
 
 Nous imputons avec les trois méthodes décrites précédemment. Dix imputations sont réalisées pour chaque méthode :
-```{r}
+
+```{r, results='hide'}
 #Predictive mean matching
 imputed_pmm = mice(data_clean_numeric_mice, pred = pred, method="pmm", m=10)
 #Linear regression ignoring model error
@@ -265,3 +270,101 @@ imputed_normnob = mice(data_clean_numeric_mice, pred = pred, method="norm.nob", 
 imputed_rf = mice(data_clean_numeric_mice, pred = pred,method="rf", m=10)
 ```
 
+Nous cherchons ensuite à déterminer les variables à conserver dans nos 3 cas à l'aide d'une méthode pas à pas. Pour réaliser cela, nous suivons le mode opératoire décris par Brand (1999) : nous appliquons une méthode pas à pas sur chaque table imputée séparement, puis nous comptons le nombre d'apparition de chaque variable dans les 10 modèles ainsi créés pour ne conserver que celles qui apparaissent dans plus de la moitié dans un "supermodèle" final.
+
+Ces opérations seront réalisées à l'aide des fonctions suivantes
+
+```{r}
+step_on_mice <- function (mice_object, direction = "both") {
+  fit <- with(data = mice_object, exp = lm(Q ~ A+B+C+D+E+F+G+H+I+J+
+                                             K+L+M+O+P+R+S+T+U+V+AA))
+  len <- length(fit$analyses)
+  all_kept_var <- vector()
+  for (i in 1:len) {
+    mod_step <- step(fit$analyses[[i]], direction = direction,trace=0)
+    kept_var <- names(mod_step[["coefficients"]])
+    all_kept_var <- c(all_kept_var, kept_var)
+  }
+  table(all_kept_var)
+}
+
+make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, intercept=TRUE){
+  final_var <- step_on_mice_res[step_on_mice_res > threshold]
+  fin_var_name <- names(final_var)
+  fin_var_name <- fin_var_name[fin_var_name!= "(Intercept)"]
+  if (intercept){
+  formula_ <- as.formula(paste("Q", paste(fin_var_name, collapse=" + "), sep=" ~ "))
+  } else {
+    formula_ <- as.formula(paste("Q", paste(paste(fin_var_name, collapse=" + "), "-1"), sep=" ~ "))
+  }
+  print(formula_)
+  with(data = mice_object, exp=lm(formula(format(formula_))))
+}
+```
+
+* Dans le cas de la méthode PMM, l'ensemble des variables présentes dans plus de 50% des modèles le sont dans tous, ce sont donc celles que nous retenons pour notre modèle final
+
+```{r}
+var_count <- step_on_mice(imputed_pmm)
+plot(var_count)
+fit_selected_var <- make_linear_model(imputed_pmm, var_count)
+summary(pool(fit_selected_var))
+```
+
+* Pour la méthode utilisant un modèle linéaire, nous retrouvons les mêmes variables que précédement dans les 10 modèles mais 3 autres apparaissent dans plus de la moitié des cas, sans pour autant être systématiquement présentes. Par ailleurs ces mêmes variables apparaissent peu significatives avec des p-value élevées.
+
+```{r}
+var_count <- step_on_mice(imputed_normnob)
+plot(var_count)
+fit_selected_var <- make_linear_model(imputed_normnob, var_count)
+summary(pool(fit_selected_var))
+```
+
+Nous réalisons alors des tests afin de vérifier si ces variables sont nécessaires au modèle. Nous testons tout d'abord l'intérêt de la variable A : 
+
+```{r}
+fit_without <- with(imputed_normnob, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+fit_with <- with(imputed_normnob, lm(Q ~ A + AA + D + K + L + M + P + S + T + U))
+anova(fit_with, fit_without)
+```
+
+La p-value du test est égale à 0,21, nous considérons donc que A n'est pas nécessaire au modèle. Nous testons maintenant la pertinence de L :
+
+```{r}
+fit_without <- with(imputed_normnob, lm(Q ~ AA + D + K + M + P + S + T + U))
+fit_with <- with(imputed_normnob, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+anova(fit_with, fit_without)
+```
+
+La p-value est toujours importante (0,88), nous ne conservons pas la variable L. Enfin nous vérifions la nécessité de conserver AA :
+
+```{r}
+fit_without <- with(imputed_normnob, lm(Q ~ D + K + M + P + S + T + U))
+fit_with <- with(imputed_normnob, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit_with, fit_without)
+```
+
+Cette fois ci la p-value est bien meilleure, à 0,08. (CONSERVER OU PAS????)
+
+* Enfin, pour la méthode de Random Forest, nous observons à nouveau des varibles apparaissant plus de 5 fois mais pas à chaque occurence, certaines présentant des p-values élevées :
+
+```{r}
+var_count <- step_on_mice(imputed_normnob)
+plot(var_count)
+fit_selected_var <- make_linear_model(imputed_normnob, var_count)
+summary(pool(fit_selected_var))
+```
+
+En testant à nouveau le modèle comme précédemment, nous décidons de retirer L et (CONSERVER OU RETIRER les pv autour de 0.08?)
+
+```{r}
+fit.without <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + L + M + P + S + T + U))
+anova(fit.with, fit.without)#conserve pas L
+
+fit.without <- with(imputed_rf, lm(Q ~ D + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)
+```
+
+Au final nous obtenons 3 modèles relativement similaires (A COMPLETER SELON CHOIX DES VARIABLES A CONSERVER)
