@@ -232,7 +232,7 @@ The group 4 (characterized by a negative coordinate on the axis) is sharing :
 high values for the variables M, D, N, E and O (variables are sorted from the strongest).
 low values for variables like P, U, F, J, T, K, H, B, L and R (variables are sorted from the weakest).
 ```
-L'analyse automatique retient que le groupe qui a des valeurs élevées pour P (*Life expectancy at birth*), U (*Mobile cellular subscriptions (per 100 people)*) et K Immunization, measles (*% of children ages 12-23 months*) a des valeurs basses pour M (*Mortality rate, under-5*) et D (*Agriculture, forestry, and fishing, value added (% of GDP)*). Nous verrons que ce sont les variables qui apparaissent pertinentes lors d'une modélisation par régression linéaire sans réduction de dimension. Pour le groupe 4, cela s'inverse.
+L'analyse automatique retient que le groupe qui a des valeurs élevées pour P (*Life expectancy at birth*), U (*Mobile cellular subscriptions (per 100 people)*) et K Immunization, measles (*% of children ages 12-23 months*) a des valeurs basses pour M (*Mortality rate, under-5*) et D (*Agriculture, forestry, and fishing, value added (% of GDP)*). Nous verrons que ce sont les variables qui apparaissent pertinentes lors d'une modélisation par régression linéaire sans réduction de la dimension. Pour le groupe 4, cela s'inverse.
 
 Notre première modélisation, effectuée après imputation des valeurs manquantes et réduction de la dimension à cinq axes, permet d'obtenir un R ajusté de 78%.
 
@@ -310,7 +310,7 @@ make_linear_model <- function(mice_object, step_on_mice_res, threshold = 5, inte
 }
 ```
 
-* Dans le cas de la méthode PMM, l'ensemble des variables présentes dans plus de 50% des modèles le sont dans tous, ce sont donc celles que nous retenons pour notre modèle final
+* Dans le cas de la méthode PMM, l'ensemble des variables présentes dans plus de 50% des modèles le sont dans tous, ce sont donc celles que nous retenons pour notre modèle final.
 
 ```{r}
 var_count <- step_on_mice(imputed_pmm)
@@ -379,7 +379,7 @@ fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
 anova(fit.with, fit.without)
 ```
 
-Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires, incluant systématiquement les variables D, k, M, P, S et U, avec T et AA selon les cas.
+Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires, incluant systématiquement les variables D, K, M, P, S et U, avec T et AA selon les cas.
 
 Nous en tirons que la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie et le nombre de souscription à des portables.
 
