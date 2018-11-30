@@ -3,13 +3,13 @@ title: "Devoir ACP et valeurs manquantes, Novembre 2018"
 author: "Aubin de Belleroche, Camille Moatti"
 date: "01 Novembre 2018"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
   html_document:
     toc: yes
     toc_depth: 3
     toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
@@ -192,13 +192,16 @@ fviz_contrib(res, choice = "var", axes = 1, top = 10)
 fviz_contrib(res, choice = "var", axes = 2, top = 10)
 ```
 
-La fonction `Investigate(res)` du package `FactoInvestigate` permet de générer un rapport automatisé sur notre ACP. Cette analyse peut servir de point de départ afin d'affiner l'interprétation. 
-(A COMPLETER)
-
 Nous pouvons d'ores et déjà visualiser la fertilitité sur les deux premiers axes de notre ACP. Pour ce faire, nous créons trois catégorie à partir de la variable continue cible. Ces trois catégories peuvent être interprétées comme des niveaux du nombre d'enfants par femme (élevé, moyen et faible). Pour ce faire, nous utilisons la fonction `cut` :
 
-```{r}
+```{r, fig.show = 'hold', out.width = '50%'}
 fviz_pca_ind(res,
+             label = "none",
+             habillage = cut(target,3),
+             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+             addEllipses = TRUE)
+fviz_pca_ind(res,
+             axes=c(2,3),
              label = "none",
              habillage = cut(target,3),
              palette = c("#00AFBB", "#E7B800", "#FC4E07"),
@@ -207,16 +210,29 @@ fviz_pca_ind(res,
   
 Avec seulement deux dimensions, nous observons qu'un point ayant une valeur positive sur la première dimension appartient presque toujours à la première catégorie (faible fertilité).  
 Les deux autres catégories, bien que plus proches, permettent d'observer que les pays où les femmes ont beaucoup d'enfants tendent à avoir une valeur très négative sur la première dimension.  
-Le visualisation de la seconde dimension par rapport à la troisième est plus difficile à interpréter de prime abord :
-
-```{r}
-fviz_pca_ind(res,
-             axes=c(2,3),
-             label = "none",
-             habillage = cut(target,3),
-             palette = c("#00AFBB", "#E7B800", "#FC4E07"),
-             addEllipses = TRUE)
+Le visualisation de la seconde dimension par rapport à la troisième est plus difficile à interpréter de prime abord.
+  
+La fonction `Investigate(res)` du package `FactoInvestigate` permet de générer un rapport automatisé sur notre ACP. Cette analyse peut servir de point de départ afin d'affiner l'interprétation. L'analyse de la première dimension est reproduite ci-dessous :
 ```
+The dimension 1 opposes individuals such as 95, 197, 156 and 194 (to the right of the graph, characterized by a strongly positive coordinate on the axis) to individuals characterized by a strongly negative coordinate on the axis (to the left of the graph).
+
+The group 1 (characterized by a positive coordinate on the axis) is sharing :
+
+high values for the variables P, U, K, J, F, T and H (variables are sorted from the strongest).
+low values for the variables M, N, D, O, E, S and AA (variables are sorted from the weakest).
+The group in which the individuals 156 and 194 stand (characterized by a positive coordinate on the axis) is sharing :
+
+high values for variables like B, T, F, J, G, S, P, C, R and V (variables are sorted from the strongest).
+low values for the variables D, N, M, I and E (variables are sorted from the weakest).
+The group in which the individuals 95 and 197 stand (characterized by a positive coordinate on the axis) is sharing :
+
+high values for the variables L, I, H, U, F, R, A and P (variables are sorted from the strongest).
+The group 4 (characterized by a negative coordinate on the axis) is sharing :
+
+high values for the variables M, D, N, E and O (variables are sorted from the strongest).
+low values for variables like P, U, F, J, T, K, H, B, L and R (variables are sorted from the weakest).
+```
+L'analyse automatique retient que le groupe qui a des valeurs élevées pour P (*Life expectancy at birth*), U (*Mobile cellular subscriptions (per 100 people)*) et K Immunization, measles (*% of children ages 12-23 months*) a des valeurs basses pour M (*Mortality rate, under-5*) et D (*Agriculture, forestry, and fishing, value added (% of GDP)*). Nous verrons que ce sont les variables qui apparaissent pertinentes lors d'une modélisation par régression linéaire sans réduction de dimension. Pour le groupe 4, cela s'inverse.
 
 Notre première modélisation, effectuée après imputation des valeurs manquantes et réduction de la dimension à cinq axes, permet d'obtenir un R ajusté de 78%.
 
@@ -365,13 +381,59 @@ anova(fit.with, fit.without)
 
 Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires, incluant systématiquement les variables D, k, M, P, S et U, avec T et AA selon les cas.
 
-COMPARAISON DES MODELES (voir comment faire)
-
 Nous en tirons que la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie et le nombre de souscription à des portables.
 
 Ces résultats semblent assez intuitifs, les pays les plus développés et les plus riches sont réputés pour avoir des taux de fécondité plus faibles. En revanche les variables explicatives selectionnées peuvent avoir de quoi surprendre par rapport à d'autres indicateurs à priori plus directs.
 
-###Annexe 1
+## Conclusion
+
+Nous avons donc essayé plusieurs méthodes pour gérer les valeurs manquantes. La première méthode s'appuie sur l'ACP pour imputer les variables. L'algorithme Mice, la seconde option, englobe plusieurs sous-méthodes. Nous en avons essayé trois avant de mettre en place une méthode de sélection de variables inspirée par [cette réponse](https://stats.stackexchange.com/questions/46719/multiple-imputation-and-model-selection) de Stef van Buuren.  
+  
+Pour continuer l'analyse nous nous pourions par exemple essayer d'évaluer les différentes méthodes d'imputation que propose mice entre elles. Nous pourrions également évaluer missMDA en parralèle. Cependant :
+  
+* mice propose de choisir une méthode d'imputation différente pour chaque variable. Il est peu probable qu'une même méthode d'imputation soit efficace pour toutes les colonnes. Nous avons mis en annexe les imputations pour la variable *CO2 Emissions* pour montrer que cette variable doit être imputée par une méthode qui a conscience du *range min max*. La méthode d'imputation par régression est susceptible de créer des émissions de CO2 négatives (les variables ont été centrées et réduites ce qui explique que le minimum soit inférieur à 0 ici).  
+Ce travail peut donc s'avérer complexe.  
+
+* mice ne propose pas de méthode `predict`. Cela peut être handicapant si l'on souhaite évaluer nos modèles de manière simple avec la RMSE. La fonction est prévue pour une prochaine *release* (cf. [ce lien](https://github.com/stefvanbuuren/mice/issues/82)). 
+
+## Annexes
+
+### Annexe 1
 ```{r}
 letters_dict
 ```
+
+### Annexe 2
+
+Fonction visualisation des données imputées avec mice :
+```{r}
+plot_imputed <- function(mice_object, original_dataset, column, plot_type="model", se=F, method="auto"){
+  x_imputations <- mice_object[["imp"]][[column]]
+  index <- row.names(x_imputations[1])
+  ordo <- original_dataset[["Q"]][strtoi(index)]
+  imputed_points <- x_imputations %>%
+    as_tibble() %>%
+    gather() %>%
+    mutate(ordo=rep(ordo, length(x_imputations)))
+  if (plot_type=="simple") {
+    ggplot() +
+      geom_point(data = original_dataset, aes_string(y = "Q", x = column)) +
+      geom_point(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5) +
+      xlab(letters_dict[column]) + ylab("Fertility rate, births per woman")
+  } else if (plot_type=="model"){
+    ggplot() +
+      geom_point(data = original_dataset, aes_string(y = "Q", x = column)) +
+      geom_smooth(data = original_dataset, aes_string(y = "Q", x = column), se=se, method=method) +
+      geom_point(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5) +
+      geom_smooth(data = imputed_points, aes(y = ordo, x = value), colour="#CC0000", alpha = 0.5, se=se, method=method) +
+      xlab(letters_dict[column]) + ylab("Fertility rate, births per woman")
+  }
+
+}
+```
+
+```{r, fig.show = 'hold', out.width = '50%'}
+plot_imputed(imputed_pmm, data_clean_numeric_mice, "T", method = "auto")
+plot_imputed(imputed_normnob, data_clean_numeric_mice, "T", method = "auto")
+```
+
