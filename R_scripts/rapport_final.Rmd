@@ -3,13 +3,13 @@ title: "Devoir ACP et valeurs manquantes, Novembre 2018"
 author: "Aubin de Belleroche, Camille Moatti"
 date: "01 Novembre 2018"
 output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
   html_document:
     toc: yes
     toc_depth: 3
     toc_float: yes
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
@@ -232,7 +232,7 @@ The group 4 (characterized by a negative coordinate on the axis) is sharing :
 high values for the variables M, D, N, E and O (variables are sorted from the strongest).
 low values for variables like P, U, F, J, T, K, H, B, L and R (variables are sorted from the weakest).
 ```
-L'analyse automatique retient que le groupe qui a des valeurs élevées pour P (*Life expectancy at birth*), U (*Mobile cellular subscriptions (per 100 people)*) et K Immunization, measles (*% of children ages 12-23 months*) a des valeurs basses pour M (*Mortality rate, under-5*) et D (*Agriculture, forestry, and fishing, value added (% of GDP)*). Nous verrons que ce sont les variables qui apparaissent pertinentes lors d'une modélisation par régression linéaire sans réduction de la dimension. Pour le groupe 4, cela s'inverse.
+L'analyse automatique retient que le groupe qui a des valeurs élevées pour P (*Life expectancy at birth*), U (*Mobile cellular subscriptions (per 100 people)*) et K Immunization, measles (*% of children ages 12-23 months*) a des valeurs basses pour M (*Mortality rate, under-5*) et D (*Agriculture, forestry, and fishing, value added (% of GDP)*). Nous verrons à la fin du devoir que ce sont les variables qui apparaissent pertinentes lors d'une modélisation par régression linéaire sans réduction de la dimension. Pour le groupe 4, cela s'inverse.
 
 Notre première modélisation, effectuée après imputation des valeurs manquantes et réduction de la dimension à cinq axes, permet d'obtenir un R ajusté de 78%.
 
@@ -381,7 +381,7 @@ anova(fit.with, fit.without)
 
 Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires, incluant systématiquement les variables D, K, M, P, S et U, avec T et AA selon les cas.
 
-Nous en tirons que la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie et le nombre de souscription à des portables.
+Nous en tirons que la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB (poids du secteur primaire dans la création de richesse), du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie et le nombre de souscription à des portables.
 
 Ces résultats semblent assez intuitifs, les pays les plus développés et les plus riches sont réputés pour avoir des taux de fécondité plus faibles. En revanche les variables explicatives selectionnées peuvent avoir de quoi surprendre par rapport à d'autres indicateurs à priori plus directs.
 
@@ -389,7 +389,7 @@ Ces résultats semblent assez intuitifs, les pays les plus développés et les p
 
 Nous avons donc essayé plusieurs méthodes pour gérer les valeurs manquantes. La première méthode s'appuie sur l'ACP pour imputer les variables. L'algorithme Mice, la seconde option, englobe plusieurs sous-méthodes. Nous en avons essayé trois avant de mettre en place une méthode de sélection de variables inspirée par [cette réponse](https://stats.stackexchange.com/questions/46719/multiple-imputation-and-model-selection) de Stef van Buuren.  
   
-Pour continuer l'analyse nous nous pourions par exemple essayer d'évaluer les différentes méthodes d'imputation que propose mice entre elles. Nous pourrions également évaluer missMDA en parralèle. Cependant :
+Pour continuer l'analyse nous pourions par exemple essayer d'évaluer les différentes méthodes d'imputation que propose mice entre elles. Nous pourrions également évaluer missMDA en parralèle. Cependant :
   
 * mice propose de choisir une méthode d'imputation différente pour chaque variable. Il est peu probable qu'une même méthode d'imputation soit efficace pour toutes les colonnes. Nous avons mis en annexe les imputations pour la variable *CO2 Emissions* pour montrer que cette variable doit être imputée par une méthode qui a conscience du *range min max*. La méthode d'imputation par régression est susceptible de créer des émissions de CO2 négatives (les variables ont été centrées et réduites ce qui explique que le minimum soit inférieur à 0 ici).  
 Ce travail peut donc s'avérer complexe.  
