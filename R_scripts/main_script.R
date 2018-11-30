@@ -293,6 +293,10 @@ anova(fit.with, fit.without) #conserve?? pv= 0.0
 fit.without <- with(imputed_rf, lm(Q ~ AA + K + M + P + S + T + U))
 fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
 anova(fit.with, fit.without)
+
+fit.without <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)
 # plot
 
 plot_imputed <- function(mice_object, original_dataset, column, plot_type="model", se=F, method="auto"){

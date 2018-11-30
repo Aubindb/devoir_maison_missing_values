@@ -87,7 +87,7 @@ data_clean %<>% select(-c(`GNI, PPP (current international $) [NY.GNP.MKTP.PP.CD
                           `GDP (current US$) [NY.GDP.MKTP.CD]`))
 ```
 
-Afin de faciliter la lecture dans la suite de notre analyse, nous renomons les différentes colonnes par des lettres et conservons la correspondance dans un dictionnaire.
+Afin de faciliter la lecture dans la suite de notre analyse, nous renomons les différentes colonnes par des lettres et conservons la correspondance dans un dictionnaire (Annexe 1).
 
 ```{r}
 saved_names <- names(data_clean)
@@ -336,7 +336,7 @@ fit_with <- with(imputed_normnob, lm(Q ~ AA + D + K + M + P + S + T + U))
 anova(fit_with, fit_without)
 ```
 
-Cette fois ci la p-value est bien meilleure, à 0,08. (CONSERVER OU PAS????)
+Cette fois ci la p-value est bien meilleure, à 0,08, nous faisons le choix de conserver la variable.
 
 * Enfin, pour la méthode de Random Forest, nous observons à nouveau des varibles apparaissant plus de 5 fois mais pas à chaque occurence, certaines présentant des p-values élevées :
 
@@ -347,18 +347,31 @@ fit_selected_var <- make_linear_model(imputed_normnob, var_count)
 summary(pool(fit_selected_var))
 ```
 
-En testant à nouveau le modèle comme précédemment, nous décidons de retirer L et (CONSERVER OU RETIRER les pv autour de 0.08?)
+En testant à nouveau le modèle comme précédemment, nous décidons de retirer L et T dont les p-value sont supérieures à 0,1 mais de conserver AA.
 
 ```{r}
-fit.without <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
-fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + L + M + P + S + T + U))
-anova(fit.with, fit.without)#conserve pas L
-
 fit.without <- with(imputed_rf, lm(Q ~ D + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)
+
+fit.without <- with(imputed_rf, lm(Q ~ AA + K + M + P + S + T + U))
+fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
+anova(fit.with, fit.without)
+
+fit.without <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + U))
 fit.with <- with(imputed_rf, lm(Q ~ AA + D + K + M + P + S + T + U))
 anova(fit.with, fit.without)
 ```
 
-Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires (A COMPLETER SELON CHOIX DES VARIABLES A CONSERVER), où la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie, les émissions de CO2 et le nombre de souscription à des portables.
+Au final, avec cette deuxième façon de faire, nous obtenons 3 modèles relativement similaires, incluant systématiquement les variables D, k, M, P, S et U, avec T et AA selon les cas.
+
+COMPARAISON DES MODELES (voir comment faire)
+
+Nous en tirons que la fécondité d'un pays dépend positivement de la part de l'agriculture et de la pêche dans le PIB, du taux de mortalité infantile et des termes de l'échange (rapport entre les prix des exportations et les prix des importations). Elle est en revanche négativement affectée par le taux de vaccination infantile à la rubéole (probablement négativement corrélé à la mortalité infantile), l'espérance de vie et le nombre de souscription à des portables.
 
 Ces résultats semblent assez intuitifs, les pays les plus développés et les plus riches sont réputés pour avoir des taux de fécondité plus faibles. En revanche les variables explicatives selectionnées peuvent avoir de quoi surprendre par rapport à d'autres indicateurs à priori plus directs.
+
+###Annexe 1
+```{r}
+letters_dict
+```
